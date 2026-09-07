@@ -1,0 +1,1093 @@
+<title>Podręcznik promptów menedżera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --paper:#F4F2EE;
+  --surface:#FFFFFF;
+  --surface-2:#FAF8F5;
+  --ink:#1B1714;
+  --ink-2:#605850;
+  --ink-3:#8C8378;
+  --rule:#DFD9D0;
+  --rule-strong:#C7BFB4;
+  --red:#A3302A;
+  --red-soft:#F2E2DE;
+  --blue:#2B4A78;
+  --blue-soft:#E4EAF3;
+  --ok:#2E6B4F;
+  --shadow:0 1px 2px rgba(27,23,20,.05), 0 8px 24px -16px rgba(27,23,20,.30);
+  --f-display:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-sans:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131110;
+    --surface:#1C1917;
+    --surface-2:#231F1C;
+    --ink:#EEE8E0;
+    --ink-2:#AFA69B;
+    --ink-3:#877E73;
+    --rule:#332E29;
+    --rule-strong:#4A433C;
+    --red:#E27B6E;
+    --red-soft:#3B221E;
+    --blue:#9CBBE8;
+    --blue-soft:#1F2A3A;
+    --ok:#79C79C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131110;
+  --surface:#1C1917;
+  --surface-2:#231F1C;
+  --ink:#EEE8E0;
+  --ink-2:#AFA69B;
+  --ink-3:#877E73;
+  --rule:#332E29;
+  --rule-strong:#4A433C;
+  --red:#E27B6E;
+  --red-soft:#3B221E;
+  --blue:#9CBBE8;
+  --blue-soft:#1F2A3A;
+  --ok:#79C79C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--f-sans); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; text-wrap:balance; font-weight:600}
+p{margin:0}
+button{font:inherit; color:inherit; cursor:pointer}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:3px}
+
+/* ---------- header ---------- */
+.top{
+  position:sticky; top:0; z-index:30;
+  display:flex; align-items:center; gap:16px;
+  padding:12px clamp(16px,3vw,32px);
+  background:color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--rule);
+}
+.mark{display:flex; align-items:baseline; gap:10px; min-width:0}
+.mark b{
+  font-family:var(--f-display); font-weight:600; font-size:19px; letter-spacing:-.01em;
+  white-space:nowrap;
+}
+.mark span{font-size:12.5px; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.top-actions{margin-left:auto; display:flex; gap:8px; align-items:center}
+.btn{
+  border:1px solid var(--rule-strong); background:var(--surface); color:var(--ink);
+  padding:7px 13px; border-radius:var(--r); font-size:13.5px; font-weight:500;
+  display:inline-flex; align-items:center; gap:7px; transition:border-color .12s, background .12s;
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn.ghost{border-color:transparent; background:transparent; color:var(--ink-2)}
+.btn.ghost:hover{color:var(--ink); background:var(--surface)}
+.btn.primary{
+  background:var(--red); border-color:var(--red); color:#fff; font-weight:600;
+}
+:root[data-theme="dark"] .btn.primary, :root:not([data-theme="light"]) .btn.primary{color:#1B1714}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .btn.primary{color:#fff}}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn-menu{display:none}
+
+/* ---------- shell ---------- */
+.shell{
+  display:grid; grid-template-columns:296px minmax(0,1fr);
+  gap:0; max-width:1480px; margin:0 auto; align-items:start;
+}
+.rail{
+  position:sticky; top:57px; align-self:start;
+  height:calc(100vh - 57px); overflow-y:auto;
+  padding:22px 18px 40px clamp(16px,3vw,32px);
+  border-right:1px solid var(--rule);
+}
+.rail-label{
+  font-size:11px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600; margin-bottom:10px;
+}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:22px}
+.chip{
+  border:1px solid var(--rule); background:transparent; color:var(--ink-2);
+  padding:4px 10px; border-radius:100px; font-size:12.5px;
+}
+.chip:hover{border-color:var(--ink-3); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.tool-list{display:flex; flex-direction:column; gap:1px}
+.tool-item{
+  display:grid; grid-template-columns:26px 1fr; gap:10px; align-items:baseline;
+  width:100%; text-align:left; background:transparent; border:0;
+  padding:9px 10px; border-radius:var(--r); color:var(--ink-2); line-height:1.35;
+}
+.tool-item:hover{background:var(--surface)}
+.tool-item .n{
+  font-family:var(--f-mono); font-size:12px; color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.tool-item .t{font-size:14.5px}
+.tool-item[aria-current="true"]{background:var(--surface); color:var(--ink); box-shadow:var(--shadow)}
+.tool-item[aria-current="true"] .t{font-weight:600}
+.tool-item[aria-current="true"] .n{color:var(--red)}
+.rail-foot{margin-top:26px; padding-top:18px; border-top:1px solid var(--rule)}
+.rail-foot button{
+  background:none; border:0; padding:0; color:var(--ink-2); font-size:13.5px;
+  text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--rule-strong);
+}
+.rail-foot button:hover{color:var(--ink)}
+
+/* ---------- main ---------- */
+main{padding:34px clamp(16px,3vw,44px) 90px; min-width:0}
+.eyebrow{
+  font-family:var(--f-mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--red); font-weight:500; margin-bottom:9px;
+}
+.title{font-family:var(--f-display); font-size:clamp(30px,3.4vw,40px); line-height:1.1; letter-spacing:-.015em}
+.lead{margin-top:12px; font-size:18px; color:var(--ink-2); max-width:62ch; line-height:1.5}
+
+.meta{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:0 30px; margin:28px 0 32px;
+  border-top:1px solid var(--rule); border-bottom:1px solid var(--rule);
+}
+.meta div{padding:16px 0}
+.meta div + div{border-top:1px solid var(--rule)}
+@media (min-width:760px){ .meta div + div{border-top:0} }
+.meta dt{
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+  font-weight:600; margin-bottom:5px;
+}
+.meta dd{margin:0; font-size:14.5px; color:var(--ink-2); line-height:1.5}
+
+.split{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:36px; align-items:start}
+
+/* form */
+.sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:4px}
+.sec-head h2{font-size:15px; letter-spacing:.02em}
+.sec-head .hint{font-size:13px; color:var(--ink-3)}
+.sec-head .spacer{margin-left:auto}
+.form{display:flex; flex-direction:column; gap:18px; margin-top:18px}
+.field label{display:block; font-size:13.5px; font-weight:600; margin-bottom:6px}
+.field .sub{font-weight:400; color:var(--ink-3); font-size:12.5px}
+.field input, .field textarea, .field select{
+  width:100%; font-family:var(--f-sans); font-size:15px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--rule-strong); border-radius:var(--r);
+  padding:10px 12px; line-height:1.5; transition:border-color .12s, box-shadow .12s;
+}
+.field textarea{resize:vertical; min-height:96px}
+.field input::placeholder, .field textarea::placeholder{color:var(--ink-3)}
+.field input:focus, .field textarea:focus, .field select:focus{
+  outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft);
+}
+.field.done input, .field.done textarea, .field.done select{border-left:3px solid var(--blue)}
+
+.example-note{
+  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+  background:var(--blue-soft); border:1px solid transparent; color:var(--ink-2);
+  padding:10px 13px; border-radius:var(--r); font-size:13.5px; margin-top:18px;
+}
+.example-note b{color:var(--ink); font-weight:600}
+.example-note button{
+  margin-left:auto; background:none; border:0; padding:0; font-size:13.5px; font-weight:600;
+  color:var(--blue); text-decoration:underline; text-underline-offset:3px;
+}
+
+/* prompt panel */
+.panel{position:sticky; top:81px}
+.panel-box{
+  background:var(--surface); border:1px solid var(--rule-strong); border-radius:var(--r);
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.panel-head{
+  display:flex; align-items:center; gap:10px; padding:12px 14px;
+  border-bottom:1px solid var(--rule); background:var(--surface-2);
+}
+.panel-head h2{font-size:13.5px}
+.count{
+  margin-left:auto; font-family:var(--f-mono); font-size:11.5px; color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.count.full{color:var(--ok)}
+pre.prompt{
+  margin:0; padding:16px 16px 18px; font-family:var(--f-mono); font-size:12.9px; line-height:1.62;
+  white-space:pre-wrap; word-break:break-word; overflow-y:auto;
+  max-height:min(52vh, 560px); color:var(--ink); tab-size:2;
+}
+pre.prompt .gap{
+  color:var(--red); background:var(--red-soft); border-radius:3px;
+  padding:0 3px; box-decoration-break:clone; -webkit-box-decoration-break:clone;
+}
+.panel-foot{
+  border-top:1px solid var(--rule); padding:12px 14px; display:flex; flex-direction:column; gap:10px;
+  background:var(--surface-2);
+}
+.panel-foot .row{display:flex; gap:8px; align-items:center}
+.panel-foot .row .btn.primary{flex:1; justify-content:center; padding:11px}
+.warn{
+  display:flex; gap:9px; font-size:12.5px; color:var(--ink-2); line-height:1.45;
+}
+.warn .dot{
+  flex:none; width:7px; height:7px; border-radius:100px; background:var(--red); margin-top:6px;
+}
+
+/* tips */
+.tips{margin-top:44px; border-top:1px solid var(--rule); padding-top:24px}
+.tips ol{margin:16px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:14px}
+.tips li{
+  display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:12px; align-items:start;
+  font-size:14.5px; color:var(--ink-2); line-height:1.55; max-width:96ch;
+}
+.tips li .idx{font-family:var(--f-mono); font-size:11.5px; color:var(--ink-3); padding-top:4px}
+.tips li .btn{padding:4px 10px; font-size:12.5px}
+
+/* rules view */
+.rules{max-width:70ch}
+.rules h2{font-family:var(--f-display); font-size:20px; margin-top:30px}
+.rules p{margin-top:8px; color:var(--ink-2); font-size:15.5px}
+.rules .dialog-ex{
+  margin-top:14px; border-left:2px solid var(--rule-strong); padding-left:16px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.rules .dialog-ex p{font-size:14.5px}
+.rules .dialog-ex b{color:var(--ink)}
+
+/* dialog */
+dialog{
+  border:1px solid var(--rule-strong); border-radius:8px; background:var(--surface); color:var(--ink);
+  padding:0; max-width:520px; width:calc(100% - 32px); box-shadow:0 24px 60px -20px rgba(0,0,0,.4);
+}
+dialog::backdrop{background:rgba(27,23,20,.42)}
+.dlg-head{padding:18px 20px 0}
+.dlg-head h2{font-family:var(--f-display); font-size:21px}
+.dlg-head p{margin-top:7px; font-size:14px; color:var(--ink-2)}
+.dlg-body{padding:18px 20px; display:flex; flex-direction:column; gap:15px}
+.dlg-foot{padding:14px 20px; border-top:1px solid var(--rule); display:flex; gap:8px; justify-content:flex-end; background:var(--surface-2)}
+.check{display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--ink-2)}
+.check input{margin-top:3px; accent-color:var(--blue); width:16px; height:16px}
+
+/* toast */
+.toast{
+  position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(12px);
+  background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:100px;
+  font-size:14px; font-weight:500; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s;
+  z-index:60; box-shadow:0 10px 30px -10px rgba(0,0,0,.5);
+}
+.toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+.mobile-bar{display:none}
+
+@media (max-width:1080px){
+  .split{grid-template-columns:minmax(0,1fr); gap:28px}
+  .panel{position:static}
+  pre.prompt{max-height:none}
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{
+    position:static; height:auto; border-right:0; border-bottom:1px solid var(--rule);
+    padding:18px clamp(16px,4vw,24px) 22px; display:none;
+  }
+  body.nav-open .rail{display:block}
+  .btn-menu{display:inline-flex}
+  .mark span{display:none}
+  main{padding:26px clamp(16px,4vw,24px) 120px}
+  .mobile-bar{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:40; gap:10px;
+    padding:11px 16px calc(11px + env(safe-area-inset-bottom));
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter:blur(8px); border-top:1px solid var(--rule);
+  }
+  .mobile-bar .btn{flex:1; justify-content:center; padding:12px}
+  .toast{bottom:78px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+
+<header class="top">
+  <div class="mark">
+    <b>Podręcznik promptów</b>
+    <span>12 narzędzi dla kadry menedżerskiej</span>
+  </div>
+  <div class="top-actions">
+    <button class="btn ghost btn-menu" id="menuBtn" aria-expanded="false">Narzędzia</button>
+    <button class="btn ghost" id="rulesBtn">Zasady</button>
+    <button class="btn" id="ctxBtn">Twój kontekst</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Lista narzędzi">
+    <div class="rail-label">Filtruj</div>
+    <div class="chips" id="chips"></div>
+    <div class="rail-label">Narzędzia</div>
+    <div class="tool-list" id="toolList"></div>
+    <div class="rail-foot">
+      <button id="rulesLink">Zasady pracy z asystentem →</button>
+    </div>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<div class="mobile-bar">
+  <button class="btn" id="mNav">Narzędzia</button>
+  <button class="btn primary" id="mCopy">Kopiuj prompt</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="ctxDlg">
+  <form method="dialog">
+    <div class="dlg-head">
+      <h2>Twój kontekst</h2>
+      <p>Wypełnij raz. Te informacje dopisujemy automatycznie do każdego promptu, żeby odpowiedzi pasowały do Twojej firmy.</p>
+    </div>
+    <div class="dlg-body">
+      <div class="field">
+        <label for="ctxBranza">Branża i profil działalności</label>
+        <input id="ctxBranza" placeholder="np. produkcja opakowań, sprzedaż B2B na rynek europejski">
+      </div>
+      <div class="field">
+        <label for="ctxOrg">Wielkość organizacji i Twojego zespołu</label>
+        <input id="ctxOrg" placeholder="np. 400 osób w firmie, 12 osób w moim zespole">
+      </div>
+      <div class="field">
+        <label for="ctxExtra">Co jeszcze asystent powinien wiedzieć <span class="sub">(opcjonalnie)</span></label>
+        <textarea id="ctxExtra" rows="2" placeholder="np. trwa wdrożenie nowego ERP, w tym roku zmienił się zarząd"></textarea>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="ctxPl" checked>
+        <span>Dopisuj prośbę o profesjonalną polszczyznę bez anglicyzmów</span>
+      </label>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" value="cancel">Anuluj</button>
+      <button class="btn primary" value="save" id="ctxSave">Zapisz</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ------------------------------------------------------------------ dane */
+const CATS = ["Decyzje","Ludzie","Komunikacja","Projekty","Analiza i rynek"];
+
+const TOOLS = [
+{
+  id:"adwokat", n:1, cat:"Decyzje", name:"Adwokat diabła na żądanie",
+  lead:"Szczera krytyka decyzji lub rekomendacji, zanim zostanie wdrożona.",
+  when:"Przed zatwierdzeniem ważnej decyzji, prezentacją dla osób decyzyjnych lub podpisaniem istotnej umowy.",
+  prep:"Opis decyzji, obszar, horyzont czasowy i listę kluczowych interesariuszy.",
+  out:"Luki w rozumowaniu, ukryte założenia, najbardziej prawdopodobny scenariusz porażki, pięć niewygodnych pytań, jednozdaniowy werdykt.",
+  fields:[
+    {k:"decyzja", label:"Decyzja lub rekomendacja", sub:"1–2 akapity", type:"area", rows:5, ph:"[wklej opis decyzji lub rekomendacji, 1-2 akapity]"},
+    {k:"obszar", label:"Obszar", type:"select", opts:["operacje","sprzedaż","IT","finanse","HR","zgodność"], ph:"[np. operacje / sprzedaż / IT / finanse / HR / zgodność]"},
+    {k:"horyzont", label:"Horyzont czasowy", type:"text", ph:"[np. 6 miesięcy]"},
+    {k:"interesariusze", label:"Kluczowi interesariusze", type:"text", ph:"[lista]"}
+  ],
+  example:{
+    decyzja:"Chcemy zamknąć magazyn w Poznaniu i obsługiwać cały region z centrum w Łodzi. Oszczędność to około 1,2 mln zł rocznie przy wydłużeniu dostawy do klientów z Wielkopolski o jeden dzień roboczy.\nDecyzja ma zapaść na zarządzie za trzy tygodnie. Zespół operacyjny jest za, sprzedaż zgłasza obawy o dwóch największych klientów.",
+    obszar:"operacje",
+    horyzont:"12 miesięcy",
+    interesariusze:"dyrektor operacyjny, kierownik magazynu w Poznaniu, dział sprzedaży B2B, dwaj kluczowi klienci z regionu, przedstawiciele załogi"
+  },
+  tpl:`Pełnisz rolę doświadczonego adwokata diabła. Twoim zadaniem jest uczciwa krytyka poniższej decyzji biznesowej. Nie łagodź przekazu i nie szukaj pozytywów dla równowagi.
+
+DECYZJA
+{{decyzja}}
+
+KONTEKST
+- Obszar: {{obszar}}
+- Horyzont: {{horyzont}}
+- Kluczowi interesariusze: {{interesariusze}}
+
+STRUKTURA ODPOWIEDZI
+1. Luki w rozumowaniu - od trzech do pięciu najpoważniejszych, z cytatem z decyzji.
+2. Błędy poznawcze - które są widoczne i po czym można je poznać.
+3. Ukryte założenia - co zostało przyjęte milcząco i wymaga weryfikacji.
+4. Scenariusz porażki - najbardziej prawdopodobna droga do strat.
+5. Pytania, których nikt nie zadał - pięć niewygodnych pytań na spotkanie decyzyjne.
+6. Werdykt - jedno zdanie: odrzucić / przepracować / przyjąć z warunkami.`,
+  tips:[
+    {t:"Jeśli odpowiedź wydaje Ci się zbyt łagodna, dopisz:", c:"Załóż, że ta decyzja jest błędna. Udowodnij mi to."},
+    {t:"Zamiast jednej decyzji możesz podać dwie lub trzy warianty i poprosić o porównanie ryzyk."},
+    {t:"Po analizie warto zapytać:", c:"Który z wymienionych błędów poznawczych jest tu najgroźniejszy i dlaczego?"}
+  ]
+},
+{
+  id:"rentgen", n:2, cat:"Komunikacja", name:"Rentgen spotkania",
+  lead:"Określenie po spotkaniu tego, co najważniejsze: decyzji, właścicieli, terminów i ukrytych ryzyk.",
+  when:"Tuż po spotkaniu, przed rozesłaniem podsumowania albo przed kolejnym spotkaniem decyzyjnym.",
+  prep:"Surowe notatki lub transkrypcję ze spotkania — w dowolnej formie.",
+  out:"Tabela ustaleń, lista pozornych decyzji, trzy sygnały wymagające szybkiej reakcji, gotowy szkic e-maila podsumowującego.",
+  fields:[
+    {k:"material", label:"Notatki lub transkrypcja", sub:"wklej w dowolnej formie", type:"area", rows:9, ph:"[wklej notatki lub transkrypcję]"}
+  ],
+  tpl:`Pełnisz rolę analityka wspierającego kadrę kierowniczą. Masz surowe notatki ze spotkania. Wyodrębnij z nich to, co istotne.
+
+MATERIAŁ
+{{material}}
+
+ZWRÓĆ:
+Tabelę w formacie Markdown z kolumnami:
+# | Decyzja / ustalenie | Właściciel | Termin | Status | Ryzyko ukryte | Zależności
+
+Zasady wypełniania:
+- jeżeli brakuje właściciela lub terminu, wpisz [DO USTALENIA] i dodaj krótką rekomendację;
+- w kolumnie „Ryzyko ukryte” umieść sygnały, które padły w dyskusji, ale nie zostały sformalizowane (wątpliwości, konflikt, brak budżetu).
+
+Po tabeli dodaj:
+- Pozorne decyzje - tematy domknięte bez realnego rozstrzygnięcia.
+- Trzy sygnały wymagające reakcji w ciągu 48 godzin.
+- Szkic e-maila podsumowującego (do 120 słów).`,
+  tips:[
+    {t:"Dla długich transkrypcji (powyżej dziesięciu stron) podziel materiał na bloki po trzy–cztery strony, a następnie połącz wyniki w jedną tabelę."},
+    {t:"Po analizie zapytaj:", c:"Które z ukrytych ryzyk jest najgroźniejsze i co powinienem z nim zrobić w tym tygodniu?"},
+    {t:"Szkic e-maila możesz poprosić o przeredagowanie w bardziej formalnym tonie albo o skrócenie do 60 słów."}
+  ]
+},
+{
+  id:"symulator", n:3, cat:"Ludzie", name:"Symulator trudnej rozmowy",
+  lead:"Próba generalna przed rozmową z pracownikiem — o słabych wynikach, konflikcie lub wypaleniu.",
+  when:"Przed rozmową korygującą, ostrzegawczą lub retencyjną. Szczególnie przydatne dla menedżerów z krótkim stażem.",
+  prep:"Profil pracownika: stanowisko, staż, sytuacja, dominująca postawa, kontekst osobisty.",
+  out:"Interaktywna symulacja z informacją zwrotną po każdej Twojej wypowiedzi.",
+  fields:[
+    {k:"stanowisko", label:"Stanowisko i staż", type:"text", ph:"[np. specjalista ds. obsługi klienta, 6 lat stażu]"},
+    {k:"sytuacja", label:"Sytuacja", type:"area", rows:2, ph:"[np. spadek wyników o 30 proc. przez ostatnie dwa kwartały]"},
+    {k:"postawa", label:"Dominująca postawa", type:"select", opts:["opór","wypalenie","konflikt","roszczeniowość"], ph:"[WYBIERZ: opór / wypalenie / konflikt / roszczeniowość]"},
+    {k:"kontekst", label:"Kontekst", type:"area", rows:2, ph:"[np. wcześniej osiągał najlepsze wyniki, ostatnio nastąpiła zmiana w życiu osobistym]"}
+  ],
+  tpl:`Wcielasz się w pracownika firmy, z którym mam przeprowadzić trudną rozmowę.
+
+PROFIL
+- Stanowisko: {{stanowisko}}
+- Sytuacja: {{sytuacja}}
+- Dominująca postawa: {{postawa}}
+- Kontekst: {{kontekst}}
+
+ZASADY SYMULACJI
+1. Odpowiadaj w pierwszej osobie - tak jak ten pracownik rzeczywiście by mówił: naturalnie, z emocjami, bez scenariusza.
+2. Po każdej mojej wypowiedzi dopisuj krótką sekcję „INFORMACJA ZWROTNA”:
+  - ocena w czterech wymiarach (empatia, konkret, stanowczość, ryzyko eskalacji), skala 0-10;
+  - jedno, co zrobiłem dobrze;
+  - jedno, co można poprawić, z alternatywnym sformułowaniem;
+  - ostrzeżenie, jeśli wchodzę w pułapkę komunikacyjną.
+3. Nie ułatwiaj mi zadania. Jeśli pracownik miałby się w tej sytuacji wycofać, pozwól mu się wycofać.
+
+Zaczynam ja. Poczekaj na moją pierwszą wypowiedź.`,
+  tips:[
+    {t:"Postawę pracownika możesz zmienić w trakcie symulacji:", c:"Od tej chwili pracownik staje się bardziej agresywny."},
+    {t:"Na koniec warto poprosić o podsumowanie:", c:"Jakie trzy błędy popełniłem najczęściej?"},
+    {t:"Jeśli chcesz przećwiczyć eskalację, dopisz:", c:"Pracownik mówi, że złoży skargę do HR."}
+  ]
+},
+{
+  id:"kpi", n:4, cat:"Komunikacja", name:"Tłumacz KPI na język zespołu",
+  lead:"Zamiana suchych wskaźników w krótką, zrozumiałą narrację na poniedziałkowe spotkanie zespołu.",
+  when:"Przed cotygodniowym spotkaniem z ludźmi, przed sesją pytań i odpowiedzi, przy komunikowaniu wyników kwartalnych.",
+  prep:"Zestaw KPI istotnych dla zespołu oraz kontekst tygodnia — kampanie, audyty, zmiany organizacyjne.",
+  out:"Narracja do trzech minut czytania: gdzie jesteśmy, co to oznacza dla odbiorców, jeden cel na tydzień i jedno otwarte pytanie.",
+  fields:[
+    {k:"sprzedaz", label:"KPI sprzedażowe", type:"text", ph:"[np. realizacja planu 87%, konwersja 18%]"},
+    {k:"operacyjne", label:"KPI operacyjne", type:"text", ph:"[np. terminowość realizacji 91%, wzrost reklamacji o 12% m/m]"},
+    {k:"jakosciowe", label:"KPI jakościowe", type:"text", ph:"[np. NPS 42, SLA 94%]"},
+    {k:"kontekst", label:"Kontekst tygodnia", type:"text", ph:"[np. start kampanii nowej usługi, audyt wewnętrzny]"}
+  ],
+  tpl:`Jestem menedżerem zespołu. Przełóż poniższe wskaźniki na krótką narrację na poniedziałkowe spotkanie (do trzech minut czytania).
+
+DANE
+- KPI sprzedażowe: {{sprzedaz}}
+- KPI operacyjne: {{operacyjne}}
+- KPI jakościowe: {{jakosciowe}}
+- Kontekst tygodnia: {{kontekst}}
+
+WYMAGANIA
+1. Język codzienny, bez żargonu zarządczego.
+2. Układ: (a) gdzie jesteśmy, (b) co to oznacza dla klienta lub odbiorcy, (c) jedna konkretna rzecz na ten tydzień.
+3. Jedna liczba jako punkt odniesienia - nie pięć.
+4. Jeżeli wyniki są słabe, nazwij to wprost. Nie udawaj entuzjazmu.
+5. Na końcu jedno otwarte pytanie, które otworzy dyskusję, a nie zamknie ją ciszą.`,
+  tips:[
+    {t:"Jeśli wyniki są mieszane, poproś o dwie wersje — optymistyczną i realistyczną — i sam zdecyduj, która pasuje do sytuacji."},
+    {t:"Dla zespołu pracującego zdalnie możesz zamienić narrację ustną na krótką wiadomość e-mail."},
+    {t:"Dopytaj:", c:"Jakiego otwartego pytania najbardziej bałby się zadać przeciętny menedżer?"}
+  ]
+},
+{
+  id:"hipotezy", n:5, cat:"Analiza i rynek", name:"Generator hipotez biznesowych",
+  lead:"Szybkie wygenerowanie testowalnych hipotez dla konkretnego problemu produktowego lub procesowego.",
+  when:"Na warsztatach eksploracyjnych, przy planowaniu testów A/B, przy diagnozie przyczyn źródłowych problemu.",
+  prep:"Jedno zdanie opisujące problem. Opcjonalnie: segment, kanał, dane liczbowe.",
+  out:"Tabela ośmiu hipotez z miernikiem, sposobem testu, kosztem i ryzykiem. Ranking trzech najlepszych.",
+  fields:[
+    {k:"problem", label:"Problem w jednym zdaniu", type:"area", rows:2, ph:"[jedno zdanie, np. „Spada konwersja formularza zamówienia w kanale internetowym”]"},
+    {k:"kontekst", label:"Kontekst", sub:"opcjonalnie", opt:true, type:"area", rows:3, ph:"[segment, kanał, dane liczbowe, jeśli masz]"}
+  ],
+  tpl:`Pełnisz rolę stratega produktu i procesów biznesowych. Na podstawie jednego zdania o problemie wygeneruj osiem hipotez, które dają się przetestować.
+
+PROBLEM
+{{problem}}
+
+KONTEKST (opcjonalnie)
+{{kontekst}}
+
+FORMAT
+Dla każdej hipotezy podaj wiersz tabeli:
+# | Hipoteza (Jeśli X, to Y, ponieważ Z) | Miernik | Sposób testu | Czas | Koszt (S/M/L) | Ryzyko
+
+Rozkład tematyczny:
+- 2 hipotezy o UX;
+- 2 o segmentacji;
+- 2 o cenie lub ofercie;
+- 2 o procesie.
+
+Dodatkowe wymagania:
+- miernik musi być możliwy do zmierzenia w maksymalnie 30 dni;
+- unikaj hipotez, których nie da się obalić;
+- po tabeli podaj ranking trzech najlepszych z jednozdaniowym uzasadnieniem każdej.`,
+  tips:[
+    {t:"Jeżeli masz dane historyczne, wklej je — hipotezy zrobią się dużo bardziej konkretne."},
+    {t:"Poproś o wariant kontrastowy:", c:"Wygeneruj trzy hipotezy tłumaczące, dlaczego tego problemu może w ogóle nie być."},
+    {t:"Dopytaj o zależności:", c:"Które hipotezy wykluczają się wzajemnie?"}
+  ]
+},
+{
+  id:"premortem", n:6, cat:"Projekty", name:"Pre-mortem projektu w pięć minut",
+  lead:"Wychwycenie ryzyk projektu, zanim się zrealizują — przez wyobrażenie sobie jego spektakularnej porażki. Technika Gary’ego Kleina.",
+  when:"Na etapie inicjacji, przed wejściem w fazę realizacji, przed decyzją inwestycyjną.",
+  prep:"Nazwę projektu, cel, budżet, terminy, kluczowych interesariuszy.",
+  out:"Nagłówek w prasie branżowej, dziesięć przyczyn porażki w pięciu kategoriach, wczesne sygnały, trzy główne ryzyka z działaniami.",
+  fields:[
+    {k:"projekt", label:"Projekt", sub:"nazwa, cel, budżet, terminy, kluczowi interesariusze", type:"area", rows:5, ph:"[nazwa, cel, budżet, terminy, kluczowi interesariusze]"}
+  ],
+  tpl:`Przeprowadź pre-mortem dla poniższego projektu. Załóż, że minął rok i projekt zakończył się spektakularną porażką. Opowiedz mi, dlaczego.
+
+PROJEKT
+{{projekt}}
+
+FORMAT ODPOWIEDZI
+1. Nagłówek artykułu w prasie branżowej (jedno zdanie).
+2. Dziesięć przyczyn porażki uporządkowanych w pięciu kategoriach:
+  - ludzie i organizacja,
+  - technologia i architektura,
+  - regulacje i zgodność,
+  - rynek i klient,
+  - zarządzanie i nadzór.
+3. Dla każdej przyczyny wskaż wczesny sygnał ostrzegawczy widoczny w pierwszym kwartale projektu.
+4. Trzy najgroźniejsze przyczyny plus działanie prewencyjne do podjęcia w tym tygodniu.
+5. Jedno pytanie do sponsora projektu, które powinienem zadać jeszcze dziś.`,
+  tips:[
+    {t:"Możesz od razu poprosić o wersję odwrotną — optymistyczną:", c:"Projekt zakończył się sukcesem. Dlaczego?"},
+    {t:"Poproś o uszeregowanie dziesięciu przyczyn według iloczynu prawdopodobieństwa i wpływu."},
+    {t:"Wynik zachowaj jako listę kontrolną na pierwsze spotkanie zespołu sterującego lub projektowego."}
+  ]
+},
+{
+  id:"interesariusze", n:7, cat:"Projekty", name:"Mapa interesariuszy inicjatywy",
+  lead:"Klasyfikacja interesariuszy i opracowanie taktyki angażowania każdej z grup.",
+  when:"Na początku każdej inicjatywy zmiany, przed kluczową prezentacją dla osób decyzyjnych oraz przy zmianie sponsora projektu.",
+  prep:"Opis inicjatywy (cel i etap). Listę interesariuszy — imiona lub same role.",
+  out:"Tabela klasyfikacji, siatka władza/zainteresowanie, taktyki dla każdej grupy, plan dla osób blokujących.",
+  fields:[
+    {k:"inicjatywa", label:"Inicjatywa", sub:"krótki opis, cel, etap", type:"area", rows:3, ph:"[krótki opis, cel, etap]"},
+    {k:"interesariusze", label:"Interesariusze", sub:"imiona, role lub same role", type:"area", rows:4, ph:"[imiona, role lub same role]"}
+  ],
+  tpl:`Zbuduj mapę interesariuszy dla inicjatywy - w układzie władza/zainteresowanie.
+
+INICJATYWA
+{{inicjatywa}}
+
+INTERESARIUSZE
+{{interesariusze}}
+
+KROK 1. KLASYFIKACJA
+Tabela z kolumnami:
+Interesariusz | Rola | Władza (W/Ś/N) | Zainteresowanie (W/Ś/N) | Ćwiartka | Postawa
+(Postawa: orędownik / neutralny / oponent / nieznana)
+
+KROK 2. SIATKA
+Krótki opis tekstowy - kto w której ćwiartce.
+
+KROK 3. TAKTYKI
+- Kluczowi gracze: trzy konkretne działania w tym tygodniu.
+- Utrzymywani w zadowoleniu: jak informować, żeby ich nie przeciążać.
+- Zarządzani uważnie: ryzyka i sposób ich neutralizacji.
+- Monitorowani: kiedy zwiększyć uwagę.
+
+KROK 4. OPONENCI
+Dla każdego: hipoteza wyjaśniająca, dlaczego ten interesariusz blokuje Twoje działanie, oraz jeden ruch otwierający rozmowę.`,
+  tips:[
+    {t:"Po mapie zapytaj:", c:"Który z oponentów jest najbardziej niebezpieczny i jak przekonać go w dwóch krokach?"},
+    {t:"Uzupełnij mapą sił:", c:"Pokaż mi układ sojuszników i przeciwników wokół kluczowej decyzji."},
+    {t:"Mapę aktualizuj co cztery–sześć tygodni — postawy zmieniają się wraz z postępem projektu."}
+  ]
+},
+{
+  id:"audytor", n:8, cat:"Komunikacja", name:"Audytor wiadomości e-mail",
+  lead:"Kontrola wiadomości pod kątem ryzyka prawnego, reputacyjnego, tonu i klarowności.",
+  when:"Przed wysłaniem e-maila do organu nadzoru, zarządu, partnera biznesowego, trudnego klienta albo w sytuacji konfliktowej.",
+  prep:"Treść wiadomości. Rolę odbiorcy, cel, poziom wrażliwości sprawy.",
+  out:"Ocena ogólna, audyt ryzyk, fragmenty wymagające poprawki, trzy warianty redakcyjne, rekomendacja.",
+  fields:[
+    {k:"wiadomosc", label:"Treść wiadomości", type:"area", rows:7, ph:"[wklej treść]"},
+    {k:"odbiorca", label:"Odbiorca", sub:"rola i relacja", type:"text", ph:"[rola i relacja]"},
+    {k:"cel", label:"Cel", sub:"co chcę osiągnąć", type:"text", ph:"[co chcę osiągnąć]"},
+    {k:"wrazliwosc", label:"Wrażliwość sprawy", type:"select", opts:["zwykła","podwyższona","krytyczna"], ph:"[zwykła / podwyższona / krytyczna]"}
+  ],
+  tpl:`Pełnisz rolę doradcy ds. komunikacji biznesowej oraz specjalisty ds. ryzyka prawnego. Sprawdź poniższą wiadomość tuż przed wysyłką.
+
+WIADOMOŚĆ
+{{wiadomosc}}
+
+KONTEKST
+- Odbiorca: {{odbiorca}}
+- Cel: {{cel}}
+- Wrażliwość: {{wrazliwosc}}
+
+ZWRÓĆ
+1. Ocena ogólna (0-10) wraz z jednozdaniowym uzasadnieniem.
+2. Audyt ryzyka w czterech wymiarach:
+  - prawne (zobowiązania, dane osobowe, poufność, tajemnica przedsiębiorstwa),
+  - reputacyjne (co, jeśli trafi do mediów lub sądu),
+  - ton (protekcjonalny / pasywno-agresywny / zbyt miękki),
+  - klarowność (czy odbiorca w dziesięć sekund wie, co ma zrobić).
+3. Fragmenty do usunięcia - wskaż konkretne zdania i uzasadnij dlaczego.
+4. Trzy warianty redakcyjne: neutralny, stanowczy, empatyczny.
+5. Rekomendacja - który wariant wysłać i dlaczego (jedno zdanie).`,
+  tips:[
+    {t:"Dla wiadomości do organu nadzoru, partnera zewnętrznego lub strony sporu dopisz:", c:"Potraktuj tę wiadomość jak dokument, który może zostać upubliczniony albo trafić do akt postępowania."},
+    {t:"Poproś o analizę z perspektywy odbiorcy:", c:"Jak sformułowanie X może zostać zinterpretowane w najgorszej wierze?"},
+    {t:"Zanim wyślesz wariant stanowczy, zadaj sobie jedno pytanie: czy to buduje relację, czy ją psuje?"}
+  ]
+},
+{
+  id:"benchmark", n:9, cat:"Analiza i rynek", name:"Benchmark prosty jak espresso",
+  lead:"Porównanie procesu lub produktu z rynkiem i identyfikacja kluczowych luk.",
+  when:"Przy ocenie własnego procesu, przed przeglądem oferty, przy przygotowaniu argumentacji dla zarządu.",
+  prep:"Opis procesu lub produktu z kluczowymi parametrami. Obszar porównania. Rynek referencyjny.",
+  out:"Tabela porównawcza (co najmniej siedem wymiarów), trzy największe luki, szybkie usprawnienia, jeden ruch strategiczny, ostrzeżenie metodologiczne.",
+  fields:[
+    {k:"proces", label:"Nasz proces lub produkt", sub:"nazwa, kluczowe parametry, mierniki, punkty bólu", type:"area", rows:4, ph:"[nazwa, kluczowe parametry, mierniki, punkty bólu]"},
+    {k:"obszar", label:"Obszar porównania", type:"text", ph:"[np. obsługa reklamacji / wdrożenie nowego klienta / realizacja zamówienia]"},
+    {k:"rynek", label:"Rynek referencyjny", type:"text", ph:"[np. rynek krajowy / europejscy liderzy branży / wzorce globalne]"}
+  ],
+  tpl:`Pełnisz rolę analityka konkurencji i efektywności biznesowej. Porównaj nasz proces albo produkt z rynkiem w formie tabeli decyzyjnej.
+
+NASZ PROCES / PRODUKT
+{{proces}}
+
+OBSZAR PORÓWNANIA
+{{obszar}}
+
+RYNEK REFERENCYJNY
+{{rynek}}
+
+ZWRÓĆ
+1. Tabela (co najmniej siedem wymiarów):
+  Wymiar | My | Typowy konkurent | Lider rynkowy | Luka | Priorytet (1-5)
+  Wymiary: czas procesu, liczba kroków, automatyzacja, koszt, NPS, kanały, dokumenty, SLA, integracje.
+2. Trzy największe luki z hipotezą, dlaczego one w ogóle istnieją.
+3. Szybkie usprawnienia - trzy rzeczy wykonalne w 90 dni bez dużego projektu.
+4. Jeden ruch strategiczny, który przesuwa naszą pozycję w ciągu dwóch-trzech lat.
+5. Ostrzeżenie metodologiczne - gdzie porównanie jest słabe (brak danych, różnice regulacyjne, inne skale).`,
+  tips:[
+    {t:"Dla krytycznych decyzji dopisz:", c:"Wskaż źródła danych dla każdego wiersza tabeli."},
+    {t:"Po benchmarku zapytaj:", c:"Gdybyś był naszym największym konkurentem, co zrobiłbyś w najbliższych sześciu miesiącach?"},
+    {t:"Kolumna „Lider rynkowy” pokazuje kierunek aspiracji, nie bezwzględny standard. Uwzględnij specyfikę branży, regulacje i skalę działania."}
+  ]
+},
+{
+  id:"jedenna", n:10, cat:"Ludzie", name:"Spotkanie 1:1 z pracownikiem",
+  lead:"Przygotowanie do rozmowy indywidualnej — od hipotezy diagnostycznej po konkretne pytania.",
+  when:"Przed każdym spotkaniem 1:1, szczególnie przed rozmową retencyjną, rozwojową lub po kryzysie w zespole.",
+  prep:"Profil pracownika: stanowisko, staż, mocne strony, obszary rozwoju, wyniki, ostatnie zdarzenia, cel spotkania.",
+  out:"Hipoteza diagnostyczna, agenda na 30 minut, dziesięć pytań otwartych, trzy pułapki komunikacyjne, plan notatek po spotkaniu.",
+  fields:[
+    {k:"inicjaly", label:"Inicjały lub imię", type:"text", ph:"[X]"},
+    {k:"stanowisko", label:"Stanowisko i staż", type:"text", ph:"[…]"},
+    {k:"mocne", label:"Mocne strony", type:"text", ph:"[…]"},
+    {k:"rozwoj", label:"Obszary rozwoju", type:"text", ph:"[…]"},
+    {k:"wyniki", label:"Wyniki ostatnich trzech miesięcy", sub:"konkretne liczby lub obserwacje", type:"area", rows:2, ph:"[konkretne liczby lub obserwacje]"},
+    {k:"zdarzenia", label:"Ostatnie zdarzenia", type:"select", opts:["awans","projekt","konflikt","brak istotnych zdarzeń"], ph:"[awans / projekt / konflikt / brak istotnych zdarzeń]"},
+    {k:"relacja", label:"Moja relacja z tą osobą", type:"select", opts:["nowa","stabilna","napięta"], ph:"[nowa / stabilna / napięta]"},
+    {k:"cel", label:"Cel spotkania", type:"select", opts:["regularne","rozwojowe","korygujące","retencyjne"], ph:"[regularne / rozwojowe / korygujące / retencyjne]"}
+  ],
+  tpl:`Pełnisz rolę doświadczonego coacha menedżerskiego. Pomóż mi przygotować się do rozmowy 1:1 z pracownikiem.
+
+PRACOWNIK
+- Inicjały lub imię: {{inicjaly}}
+- Stanowisko i staż: {{stanowisko}}
+- Mocne strony: {{mocne}}
+- Obszary rozwoju: {{rozwoj}}
+- Wyniki ostatnich trzech miesięcy: {{wyniki}}
+- Ostatnie zdarzenia: {{zdarzenia}}
+- Moja relacja z tą osobą: {{relacja}}
+- Cel spotkania: {{cel}}
+
+ZWRÓĆ
+1. Hipotezę o stanie pracownika - dwa, trzy zdania.
+2. Agendę 30-minutową z podziałem czasu (wejście / praca / rozwój / domknięcie).
+3. Dziesięć pytań otwartych, uporządkowanych:
+  - trzy wejściowe (energia, przeszkody);
+  - trzy o pracę (konkrety);
+  - trzy rozwojowe (ambicje, luki);
+  - jedno niewygodne, którego nikt mu do tej pory nie zadał.
+4. Czego nie mówić - trzy pułapki komunikacyjne.
+5. Co zanotować po spotkaniu - trzy rzeczy.`,
+  tips:[
+    {t:"Jeśli masz notatki z poprzednich spotkań 1:1, wklej je — rozmowa zyska ciągłość."},
+    {t:"Poproś o wariant dla osoby z innego kręgu kulturowego:", c:"Dostosuj pytania do osoby, która rzadko mówi wprost."},
+    {t:"Pytanie niewygodne możesz rozwinąć:", c:"Dlaczego to pytanie jest trudne i jak je zadać, żeby pracownik się nie zamknął?"}
+  ]
+},
+{
+  id:"dekoder", n:11, cat:"Analiza i rynek", name:"Dekoder regulacji i standardów",
+  lead:"Przekład fragmentu przepisu, wytycznej lub standardu na listę konkretnych działań operacyjnych.",
+  when:"Po publikacji nowej ustawy, rozporządzenia, wytycznej organu nadzoru albo standardu branżowego.",
+  prep:"Fragment wymagania (dokładny cytat), źródło i datę oraz obszar firmy, którego dotyczy.",
+  out:"Streszczenie intencji, tabela wymagań operacyjnych, pułapki interpretacyjne, pytania do prawnika, krótka lista kontrolna.",
+  fields:[
+    {k:"fragment", label:"Fragment regulacji lub standardu", sub:"dokładny cytat", type:"area", rows:6, ph:"[dokładny cytat]"},
+    {k:"zrodlo", label:"Źródło i data", type:"text", ph:"[np. rozporządzenie UE / ustawa krajowa / standard branżowy, data]"},
+    {k:"obszar", label:"Obszar firmy", type:"text", ph:"[np. sprzedaż / HR / produkcja / łańcuch dostaw / cyberbezpieczeństwo]"}
+  ],
+  tpl:`Pełnisz rolę doświadczonego specjalisty ds. zgodności regulacyjnej i zarządzania ryzykiem. Przełóż poniższy fragment regulacji, wytycznej lub standardu na konkretne działania.
+
+FRAGMENT REGULACJI LUB STANDARDU
+{{fragment}}
+
+ŹRÓDŁO I DATA
+{{zrodlo}}
+
+OBSZAR FIRMY
+{{obszar}}
+
+ZWRÓĆ
+1. Streszczenie w trzech zdaniach - jaki jest cel wymagania i co jego autor chce osiągnąć.
+2. Tabelę:
+  Wymaganie | Co to znaczy operacyjnie | Odpowiedzialna rola | Dokument | Priorytet | Termin
+3. Pułapki interpretacyjne - trzy miejsca, w których łatwo zrozumieć przepis opacznie.
+4. Pytania do prawnika - trzy, na które nie odpowiem sam.
+5. Listę kontrolną do wstępnej samooceny (pięć pytań, dziesięć minut pracy).
+6. Zastrzeżenie: to interpretacja wspierająca, nie opinia prawna.`,
+  tips:[
+    {t:"Dla złożonych regulacji wklej kilka artykułów i poproś o syntezę zależności między nimi."},
+    {t:"Po dekodowaniu zapytaj:", c:"Pokaż, jak ten wymóg może wpłynąć na firmę produkcyjną, usługową i technologiczną oraz wskaż różnice we wdrożeniu."},
+    {t:"Każdy wynik weryfikuj z działem prawnym, działem zgodności lub właściwym ekspertem przed wdrożeniem. Prompt wspiera ekspertów, nie zastępuje ich."}
+  ]
+},
+{
+  id:"sentyment", n:12, cat:"Ludzie", name:"Analityk sentymentu zespołu",
+  lead:"Wyciągnięcie nastrojów, trendów i słabych sygnałów z surowych danych o zespole.",
+  when:"Po badaniu satysfakcji, po fali odejść, po reorganizacji, przed rocznymi rozmowami oceniającymi.",
+  prep:"Anonimowe wypowiedzi, wyniki ankiet, notatki ze spotkań. Kontekst: wielkość zespołu, obszar, ostatnie zmiany.",
+  out:"Mapa sentymentu, pięć najczęstszych tematów, trendy, słabe sygnały, trzy interwencje, czego nie robić, ograniczenia analizy.",
+  fields:[
+    {k:"dane", label:"Dane", sub:"anonimowe wypowiedzi, wyniki ankiet, notatki", type:"area", rows:8, ph:"[wklej anonimowe wypowiedzi, wyniki ankiet, notatki]"},
+    {k:"wielkosc", label:"Wielkość zespołu", type:"text", ph:"[…]"},
+    {k:"obszar", label:"Obszar", type:"text", ph:"[…]"},
+    {k:"zmiany", label:"Ostatnie zmiany", type:"select", opts:["reorganizacja","nowe cele","odejścia","bez zmian"], ph:"[reorganizacja / nowe cele / odejścia / bez zmian]"}
+  ],
+  tpl:`Pełnisz rolę analityka kultury organizacyjnej. Wyciągnij nastroje, trendy i propozycje interwencji z poniższych danych.
+
+DANE
+{{dane}}
+
+KONTEKST ZESPOŁU
+- Wielkość: {{wielkosc}}
+- Obszar: {{obszar}}
+- Ostatnie zmiany: {{zmiany}}
+
+ZWRÓĆ
+1. Mapę sentymentu - liczbowy i procentowy rozkład kategorii: pozytywny / neutralny / negatywny / mieszany. Jeśli dane nie pozwalają na wiarygodne zliczenie, podaj ocenę jakościową.
+2. Pięć najczęstszych tematów: temat, liczba wzmianek, dominująca emocja, zanonimizowany cytat lub parafraza.
+3. Trendy w porównaniu z poprzednim okresem, jeśli dane na to pozwalają.
+4. Słabe sygnały - trzy rzeczy, które pojawiają się raz albo dwa razy, ale mogą być wczesnym ostrzeżeniem.
+5. Trzy interwencje menedżerskie na ten tydzień: cel, konkretne działanie, oczekiwany sygnał zwrotny.
+6. Czego nie robić - dwie odruchowe reakcje, które tylko pogorszą sytuację.
+7. Ograniczenia analizy - czego te dane nie pokazują.`,
+  tips:[
+    {t:"Dołącz dane historyczne:", c:"Poprzednie badanie pokazało X. Co się zmieniło i dlaczego?"},
+    {t:"Zapytaj o priorytet:", c:"Gdybyś mógł zająć się tylko jednym tematem, który byłby najważniejszy?"},
+    {t:"Wnioski udostępniaj zespołowi w skróconej formie. Przejrzystość buduje zaufanie."}
+  ]
+}
+];
+
+const RULES = [
+  ["Kontekst to paliwo","Im więcej konkretów wpiszesz w polach, tym lepszy wynik. Asystent nie zna struktury firmy, historii Twoich decyzji ani relacji wewnątrz zespołu."],
+  ["Dane wrażliwe","Zanonimizuj imiona, numery umów oraz identyfikatory klientów i pracowników. Nie wprowadzaj tajemnicy przedsiębiorstwa, informacji objętych NDA ani innych danych poufnych. Korzystaj wyłącznie z narzędzi zatwierdzonych w firmie."],
+  ["Szkic, nie gotowiec","Prompt skraca drogę do sensownego materiału. Nie zastępuje Twojej oceny ani znajomości kontekstu."],
+  ["Iteracja","Dopytuj. „Pogłęb punkt trzeci”, „podaj przykład z mojej branży”, „skróć do pięciu zdań”, „bądź bardziej stanowczy” — to są zwykłe, skuteczne polecenia."],
+  ["Weryfikacja liczb","Asystent może generować nieprawdziwe statystyki i nieistniejące cytaty z przepisów. Wszystkie liczby, daty i fragmenty regulacji sprawdzaj u źródła."],
+  ["Dyscyplina językowa","Jeżeli zależy Ci na czystej polszczyźnie, dopisz na końcu promptu: „Odpowiadaj profesjonalną polszczyzną, bez anglicyzmów”. W tym podręczniku robi to za Ciebie przełącznik w oknie „Twój kontekst”."],
+  ["Wyniki prawne i finansowe","Treści prawne, regulacyjne i finansowe zawsze konsultuj z ekspertem. Prompt wspiera ekspertów, nie zastępuje ich."]
+];
+
+/* ------------------------------------------------------------- pamięć */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+let ctx = store.get("pp.ctx", {branza:"", org:"", extra:"", pl:true});
+let vals = store.get("pp.vals", {});
+let exampleUsed = store.get("pp.example", false);
+let filter = "Wszystkie";
+let current = TOOLS[0];
+let view = "tool";
+
+if(!exampleUsed && !vals[TOOLS[0].id]){
+  vals[TOOLS[0].id] = Object.assign({}, TOOLS[0].example);
+  vals[TOOLS[0].id].__example = true;
+}
+
+/* -------------------------------------------------------- budowa promptu */
+function ctxSegments(){
+  const out = [];
+  const lines = [];
+  if(ctx.branza.trim()) lines.push("- Branża i profil działalności: " + ctx.branza.trim());
+  if(ctx.org.trim())    lines.push("- Organizacja i zespół: " + ctx.org.trim());
+  if(ctx.extra.trim())  lines.push("- Dodatkowe informacje: " + ctx.extra.trim());
+  if(lines.length) out.push({t:"\n\nKONTEKST FIRMOWY\n" + lines.join("\n"), filled:true});
+  if(ctx.pl) out.push({t:"\n\nOdpowiadaj profesjonalną polszczyzną, bez anglicyzmów.", filled:true});
+  return out;
+}
+function buildSegments(tool){
+  const v = vals[tool.id] || {};
+  const parts = tool.tpl.split(/(\{\{\w+\}\})/g);
+  const segs = [];
+  parts.forEach(p=>{
+    const m = p.match(/^\{\{(\w+)\}\}$/);
+    if(!m){ if(p) segs.push({t:p, filled:true}); return; }
+    const f = tool.fields.find(x=>x.k===m[1]);
+    const val = (v[m[1]]||"").trim();
+    if(val) segs.push({t:val, filled:true});
+    else segs.push({t:f.ph, filled:false});
+  });
+  return segs.concat(ctxSegments());
+}
+function plainPrompt(tool){ return buildSegments(tool).map(s=>s.t).join(""); }
+
+/* ---------------------------------------------------------------- render */
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const el = document.getElementById.bind(document);
+
+function renderRail(){
+  const chips = el("chips");
+  chips.innerHTML = ["Wszystkie"].concat(CATS).map(c=>
+    `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===filter}">${esc(c)}</button>`).join("");
+  const list = TOOLS.filter(t=>filter==="Wszystkie"||t.cat===filter);
+  el("toolList").innerHTML = list.map(t=>
+    `<button class="tool-item" data-id="${t.id}" aria-current="${view==='tool'&&t.id===current.id}">
+       <span class="n">${String(t.n).padStart(2,"0")}</span>
+       <span class="t">${esc(t.name)}</span>
+     </button>`).join("");
+}
+
+function renderTool(){
+  const t = current, v = vals[t.id] || {};
+  const req = t.fields.filter(f=>!f.opt);
+  const done = req.filter(f=>(v[f.k]||"").trim()).length;
+  const isExample = !!v.__example;
+
+  const fieldsHtml = t.fields.map(f=>{
+    const val = v[f.k] || "";
+    const id = "f_"+t.id+"_"+f.k;
+    const lab = `<label for="${id}">${esc(f.label)}${f.sub?` <span class="sub">${esc(f.sub)}</span>`:""}</label>`;
+    let input;
+    if(f.type==="area"){
+      input = `<textarea id="${id}" data-k="${f.k}" rows="${f.rows||3}" placeholder="${esc(f.ph)}">${esc(val)}</textarea>`;
+    } else if(f.type==="select"){
+      input = `<select id="${id}" data-k="${f.k}"><option value="">— wybierz —</option>` +
+        f.opts.map(o=>`<option${o===val?" selected":""}>${esc(o)}</option>`).join("") + `</select>`;
+    } else {
+      input = `<input id="${id}" data-k="${f.k}" value="${esc(val)}" placeholder="${esc(f.ph)}">`;
+    }
+    return `<div class="field${val.trim()?" done":""}">${lab}${input}</div>`;
+  }).join("");
+
+  const promptHtml = buildSegments(t).map(s=>
+    s.filled ? esc(s.t) : `<span class="gap">${esc(s.t)}</span>`).join("");
+
+  const tipsHtml = t.tips.map((tip,i)=>
+    `<li>
+       <span class="idx">${i+1}</span>
+       <span>${esc(tip.t)}${tip.c?` <em>„${esc(tip.c)}”</em>`:""}</span>
+       ${tip.c?`<button class="btn" data-tip="${i}">Kopiuj</button>`:"<span></span>"}
+     </li>`).join("");
+
+  el("main").innerHTML = `
+    <div class="eyebrow">Narzędzie ${String(t.n).padStart(2,"0")} · ${esc(t.cat)}</div>
+    <h1 class="title">${esc(t.name)}</h1>
+    <p class="lead">${esc(t.lead)}</p>
+
+    <dl class="meta">
+      <div><dt>Kiedy sięgnąć</dt><dd>${esc(t.when)}</dd></div>
+      <div><dt>Co przygotować</dt><dd>${esc(t.prep)}</dd></div>
+      <div><dt>Czego oczekiwać</dt><dd>${esc(t.out)}</dd></div>
+    </dl>
+
+    <div class="split">
+      <section>
+        <div class="sec-head">
+          <h2>Uzupełnij</h2>
+          <span class="hint">Puste pola zostaną w prompcie jako podpowiedzi.</span>
+          <span class="spacer"></span>
+          <button class="btn ghost" id="clearBtn">Wyczyść</button>
+        </div>
+        ${isExample?`<div class="example-note"><span><b>To przykład</b>, żebyś od razu zobaczył efekt.</span><button id="dropExample">Wyczyść i wpisz swoje</button></div>`:""}
+        <div class="form" id="form">${fieldsHtml}</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-box">
+          <div class="panel-head">
+            <h2>Twój prompt</h2>
+            <span class="count${done===req.length?" full":""}">${done}/${req.length} pól</span>
+          </div>
+          <pre class="prompt" id="promptBox">${promptHtml}</pre>
+          <div class="panel-foot">
+            <div class="row">
+              <button class="btn primary" id="copyBtn">Kopiuj prompt</button>
+            </div>
+            <div class="warn">
+              <span class="dot"></span>
+              <span>Zanim wkleisz: usuń imiona, numery umów i identyfikatory klientów. Korzystaj tylko z asystenta zatwierdzonego w firmie.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="tips">
+      <div class="sec-head"><h2>Jak pogłębić wynik</h2><span class="hint">Wyślij po pierwszej odpowiedzi.</span></div>
+      <ol>${tipsHtml}</ol>
+    </section>
+  `;
+
+  el("form").addEventListener("input", e=>{
+    const k = e.target.dataset.k; if(!k) return;
+    const cur = vals[t.id] || (vals[t.id]={});
+    cur[k] = e.target.value;
+    delete cur.__example;
+    store.set("pp.vals", vals); store.set("pp.example", true);
+    softUpdate();
+  });
+
+  el("copyBtn").onclick = ()=>copy(plainPrompt(t), "Prompt skopiowany");
+  el("clearBtn").onclick = ()=>{ vals[t.id]={}; store.set("pp.vals", vals); store.set("pp.example", true); renderTool(); };
+  const de = el("dropExample"); if(de) de.onclick = ()=>{ vals[t.id]={}; store.set("pp.vals", vals); store.set("pp.example", true); renderTool(); };
+  el("main").querySelectorAll("[data-tip]").forEach(b=>{
+    b.onclick = ()=>copy(t.tips[+b.dataset.tip].c, "Skopiowano dopytanie");
+  });
+}
+
+/* lekka aktualizacja podglądu bez przebudowy formularza (żeby nie gubić kursora) */
+function softUpdate(){
+  const t = current, v = vals[t.id]||{};
+  const box = el("promptBox"); if(!box) return;
+  box.innerHTML = buildSegments(t).map(s=> s.filled ? esc(s.t) : `<span class="gap">${esc(s.t)}</span>`).join("");
+  const req = t.fields.filter(f=>!f.opt);
+  const done = req.filter(f=>(v[f.k]||"").trim()).length;
+  const c = document.querySelector(".count");
+  c.textContent = `${done}/${req.length} pól`;
+  c.classList.toggle("full", done===req.length);
+  el("main").querySelectorAll(".field").forEach((fd,i)=>{
+    const f = t.fields[i];
+    fd.classList.toggle("done", !!(v[f.k]||"").trim());
+  });
+  const note = document.querySelector(".example-note");
+  if(note && !v.__example) note.remove();
+}
+
+function renderRules(){
+  el("main").innerHTML = `
+    <div class="eyebrow">Załącznik</div>
+    <h1 class="title">Zasady pracy z asystentem</h1>
+    <p class="lead">Siedem rzeczy, które decydują o tym, czy prompt da Ci użyteczny materiał, czy stratę czasu.</p>
+    <div class="rules">
+      ${RULES.map(r=>`<h2>${esc(r[0])}</h2><p>${esc(r[1])}</p>`).join("")}
+      <h2>Przykład pracy iteracyjnej</h2>
+      <p>Załóżmy, że korzystasz z narzędzia „Adwokat diabła” i masz pierwszą odpowiedź. Pierwsze ujęcie rzadko jest ostateczne — traktuj je jak szkic w rozmowie z analitykiem.</p>
+      <div class="dialog-ex">
+        <p><b>Ty:</b> Punkt trzeci o ukrytych założeniach jest zbyt ogólny. Rozwiń go na przykładzie założenia o stabilności popytu i pokaż, jak sprawdzić je w dwóch krokach.</p>
+        <p><b>Asystent:</b> [odpowiedź odnosząca się do wskazanego założenia]</p>
+        <p><b>Ty:</b> Dobrze. Teraz w tej samej formie sprawdź założenie o utrzymaniu wolumenu sprzedaży.</p>
+        <p><b>Asystent:</b> [odpowiedź]</p>
+      </div>
+      <p style="margin-top:22px"><button class="btn" id="backBtn">← Wróć do narzędzi</button></p>
+    </div>`;
+  el("backBtn").onclick = ()=>{ view="tool"; render(); };
+}
+
+function render(){
+  renderRail();
+  view==="rules" ? renderRules() : renderTool();
+  document.querySelector(".mobile-bar").style.display = "";
+  el("mCopy").style.visibility = view==="rules" ? "hidden" : "visible";
+  window.scrollTo({top:0, behavior:"instant"});
+}
+
+/* -------------------------------------------------------------- działania */
+function toast(msg){
+  const t = el("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove("on"), 1900);
+}
+function copy(text, msg){
+  const done = ()=>toast(msg);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, ()=>fallback(text, done));
+  } else fallback(text, done);
+}
+function fallback(text, done){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){ toast("Nie udało się skopiować — zaznacz tekst ręcznie"); }
+  ta.remove();
+}
+
+el("chips").addEventListener("click", e=>{
+  const c = e.target.dataset.cat; if(!c) return;
+  filter = c; renderRail();
+});
+el("toolList").addEventListener("click", e=>{
+  const b = e.target.closest("[data-id]"); if(!b) return;
+  current = TOOLS.find(t=>t.id===b.dataset.id); view="tool";
+  document.body.classList.remove("nav-open");
+  el("menuBtn").setAttribute("aria-expanded","false");
+  render();
+});
+el("rulesBtn").onclick = el("rulesLink").onclick = ()=>{ view="rules"; document.body.classList.remove("nav-open"); render(); };
+el("menuBtn").onclick = el("mNav").onclick = ()=>{
+  const open = document.body.classList.toggle("nav-open");
+  el("menuBtn").setAttribute("aria-expanded", String(open));
+  if(open) el("rail").scrollIntoView({behavior:"smooth", block:"start"});
+};
+el("mCopy").onclick = ()=>copy(plainPrompt(current), "Prompt skopiowany");
+
+const dlg = el("ctxDlg");
+el("ctxBtn").onclick = ()=>{
+  el("ctxBranza").value = ctx.branza; el("ctxOrg").value = ctx.org;
+  el("ctxExtra").value = ctx.extra;   el("ctxPl").checked = ctx.pl;
+  dlg.showModal();
+};
+dlg.addEventListener("close", ()=>{
+  if(dlg.returnValue !== "save") return;
+  ctx = {branza:el("ctxBranza").value, org:el("ctxOrg").value, extra:el("ctxExtra").value, pl:el("ctxPl").checked};
+  store.set("pp.ctx", ctx);
+  if(view==="tool") softUpdate();
+  toast("Kontekst zapisany");
+});
+
+render();
+</script>
