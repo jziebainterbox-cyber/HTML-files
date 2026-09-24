@@ -65,6 +65,7 @@
           <b>Ciężki 30 kg</b><span>30 pkt · 2 miejsca, spowalnia</span>
           <b>Wirująca paleta</b><span>omijaj, ogłusza i strąca karton</span>
           <b>Kawa / apteczka</b><span>przyspieszenie / −1 reklamacja</span>
+          <b>Paris, brązowy pudel</b><span>spada raz na jakiś czas — złap ją, kasuje wszystkie reklamacje</span>
           <b>Prezes</b><span>„Jazda z kurwami!” i rzuca stówą: złap = dopalacz</span>
         </div>
         <button id="startBtn" type="button">Start zmiany</button>
@@ -137,6 +138,7 @@ const sfx = {
   horn:  () => { beep(220, .35, 'sawtooth', .05); beep(277, .35, 'sawtooth', .04); },
   over:  () => { beep(300,.2,'sawtooth',.06,-100); setTimeout(()=>beep(200,.4,'sawtooth',.06,-120),200); },
   toss:  () => beep(420, .07, 'triangle', .05, 160),
+  bark:  () => { beep(760, .07, 'square', .05, -380); setTimeout(()=>beep(820, .09, 'square', .05, -420), 140); },
 };
 
 /* ---------- sizing & background ---------- */
@@ -279,8 +281,8 @@ function newTruck(level, parked){
 function newGame(){
   G = { score:0, level:1, strikes:0, combo:0, best: loadBest(), trucksDone:0,
         boxes:[], tele:[], fly:[], parts:[], pops:[], spawnT:1.1, shake:0, t:0, over:false,
-        boss:null, bossT:12, notes:[], perfT:70, perfV:70, perfSum:0, perfN:0, perfSampleT:0, mood:null, moodT:0, moodPop:0, fireworks:[], fwT:0, bossReplyT:null, idleTalkT: 45 + Math.random() * 15,
-        guest:null, guestCd:0, saidHeavy:false,
+        boss:null, bossT:12, notes:[], perfT:70, perfV:70, perfSum:0, perfN:0, perfSampleT:0, mood:null, moodT:0, moodPop:0, fireworks:[], fwT:0, bossReplyT:null, idleTalkT: 25 + Math.random() * 20,
+        guest:null, guestCd:0, saidHeavy:false, paris:null, parisT: 40 + Math.random() * 20,
         player:{ x:300, vx:0, sw:0, stack:[], stun:0, boost:0, boostLabel:'', face:1, walk:0, unloadT:0, throwCd:0 },
         truck: newTruck(1, true) };
 }
@@ -447,16 +449,17 @@ function update(dt){
   G.idleTalkT -= dt;
   if (G.idleTalkT <= 0){
     if (!G.workerSay && !G.bossReplyT && !G.boss){
-      const idleLines = ['Ale mi się nie chce...', 'A może tak L4?'];
+      const idleLines = ['Ale mi się nie chce...', 'A może tak L4?', 'Zajebisty mam kask, od Dyrektora Sławomira!'];
       G.workerSay = { text: idleLines[Math.floor(Math.random() * idleLines.length)], t: 3 };
     }
-    G.idleTalkT = 45 + Math.random() * 15;
+    G.idleTalkT = 25 + Math.random() * 20;
   }
 
   if (G.guestCd > 0) G.guestCd -= dt;
   if (G.guest) updateGuest(dt);
 
   updateBoss(dt);
+  updateParis(dt);
 
   // efficiency gauge: slowly sags unless you keep working
   G.perfT = Math.max(PERF_MIN, G.perfT - 2.5 * dt);
@@ -565,6 +568,7 @@ function gameOver(){
   // outro: the athletic guy sprints to the middle and sums up the shift
   G.over = true; G.outroDone = false; sfx.over();
   G.pizda = { x:-30, state:'enter', t:0, fast:true };
+  G.paris = null;
   keys.left = keys.right = false;
 }
 function updateOutro(dt){
@@ -637,6 +641,111 @@ function pickBossLine(){
 /* ---------- wskaźnik OEE ---------- */
 const PERF_MIN = 0;
 function perf(d){ G.perfT = Math.min(100, Math.max(PERF_MIN, G.perfT + d)); }
+/* ---------- Paris: brązowy pudel, który raz na jakiś czas spada przez lukę i kasuje wszystkie reklamacje ---------- */
+function updateParis(dt){
+  const p = G.player;
+  if (!G.paris){
+    G.parisT -= dt;
+    if (G.parisT <= 0){
+      // pojawia się tylko wtedy, gdy jest co kasować
+      if (G.strikes > 0 && !G.pizda){
+        const x = 190 + Math.random() * 350;
+        G.paris = { state:'tele', x, y:30, vy:0, t:1.4, rot:0, face: Math.random() < .5 ? -1 : 1, walk:0, life:0, say:0 };
+        beep(1200, .06, 'triangle', .04); setTimeout(() => beep(1500, .08, 'triangle', .04), 90);
+        G.parisT = 45 + Math.random() * 25;
+      } else G.parisT = 5;
+    }
+    return;
+  }
+  const P = G.paris;
+  if (P.say > 0) P.say -= dt;
+  const touching = () => Math.abs(P.x - p.x) < 42;
+  if (P.state === 'tele'){
+    P.t -= dt;
+    if (P.t <= 0){ P.state = 'fall'; P.vy = 20; P.y = 60; P.say = 1.4; sfx.bark(); }
+  } else if (P.state === 'fall'){
+    P.vy = Math.min(150, P.vy + 110 * dt);
+    P.y += P.vy * dt; P.rot = Math.sin(G.t * 9) * 0.35;
+    if (P.y >= stackTop() && touching()) catchParis();
+    else if (P.y >= FLOOR){ P.y = FLOOR; P.rot = 0; P.state = 'ground'; P.life = 7; P.say = 1.2; sfx.bark(); burst(P.x, FLOOR, '#8a5530', 6); }
+  } else if (P.state === 'ground'){
+    P.life -= dt; P.face = p.x >= P.x ? 1 : -1;
+    if (touching()) catchParis();
+    else if (P.life <= 0){ P.state = 'leave'; P.face = -1; }
+  } else if (P.state === 'happy'){
+    P.t += dt; P.face = p.x >= P.x ? 1 : -1;
+    if (P.t > 1.6){ P.state = 'leave'; P.face = -1; }
+  } else if (P.state === 'leave'){
+    P.x += P.face * 280 * dt; P.walk += dt * 18;
+    if (P.x < -50 || P.x > W + 50) G.paris = null;
+  }
+}
+function catchParis(){
+  const P = G.paris;
+  P.state = 'happy'; P.t = 0; P.rot = 0; P.y = FLOOR; P.say = 1.6;
+  // odskakuje obok robotnika, żeby się nie nakładali
+  const px = G.player.x; P.x = px < 120 ? px + 36 : px - 36;
+  const n = G.strikes; G.strikes = 0;
+  perf(10); sfx.power(); sfx.bark();
+  burst(P.x, FLOOR - 50, '#ff8fb8', 18); burst(P.x, FLOOR - 50, '#8a5530', 8);
+  pop(n ? 'PARIS! Reklamacje skasowane' : 'PARIS!', Math.max(160, Math.min(W - 160, P.x)), FLOOR - 130, '#ff8fb8', 26);
+}
+function drawParisHatch(P){
+  const on = Math.floor(P.t * 12) % 2 === 0;
+  ctx.fillStyle = on ? '#ff8fb8' : '#7a3a55';
+  ctx.fillRect(P.x - 18, 24, 36, 6);
+  ctx.fillStyle = on ? 'rgba(255,143,184,.2)' : 'rgba(255,143,184,.06)';
+  ctx.beginPath(); ctx.moveTo(P.x-18, 30); ctx.lineTo(P.x+18, 30); ctx.lineTo(P.x+34, 84); ctx.lineTo(P.x-34, 84); ctx.fill();
+  ctx.fillStyle = '#ff8fb8'; ctx.font = `700 16px ${HUD_FONT}`; ctx.textAlign = 'center'; ctx.fillText('♥', P.x, 50);
+}
+function drawParis(P){
+  if (P.state === 'tele'){ drawParisHatch(P); return; }
+  if (P.state === 'ground' && P.life < 2 && Math.floor(P.life * 8) % 2) return;
+  const falling = P.state === 'fall', running = P.state === 'leave', sitting = P.state === 'ground';
+  const hop = P.state === 'happy' ? -Math.abs(Math.sin(P.t * 10)) * 14 : running ? -Math.abs(Math.sin(P.walk)) * 4 : 0;
+  // cień
+  const dist = FLOOR - P.y, a = Math.max(0.08, 0.35 - dist / 1200);
+  ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.beginPath(); ctx.ellipse(P.x, FLOOR + 2, 14 * (1 - dist / 1400), 4, 0, 0, Math.PI*2); ctx.fill();
+  // toy pudel w strzyżeniu „na misia”: rudobrązowe loki na całym ciele, okrągła głowa, puchate uszy
+  const DARK = '#6e3419', MID = '#9a4f2c', LIGHT = '#b8673c', HI = '#cf8456';
+  ctx.save(); ctx.translate(P.x, P.y + hop); ctx.rotate(P.rot); ctx.scale(P.face * 1.1, 1.1);
+  const puff = (x, y, r, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); };
+  const curly = (x, y, r, c, n = 7) => { puff(x, y, r, c); for (let i = 0; i < n; i++){ const an = i * Math.PI * 2 / n + x * .3; puff(x + Math.cos(an) * r * .75, y + Math.sin(an) * r * .75, r * .42, c); } };
+  // łapy: krótkie, grube, całe w lokach
+  const legs = [[-9, 0, DARK], [5, 1, DARK], [-5, 2, MID], [9, 3, MID]];
+  for (const [lx, ph, c] of legs){
+    let fx = lx, fy = 0;
+    if (running) fx += Math.sin(P.walk + ph * 1.6) * 4;
+    if (falling){ fx += (lx < 0 ? -1 : 1) * 5; fy = -3 + Math.sin(G.t * 20 + ph) * 2.5; }
+    if (sitting && lx < 0){ fx = lx + 3; fy = -1; }
+    const mx = (lx + fx) / 2;
+    curly(mx, (fy - 13) / 2 - 3, 3.6, c, 5);
+    curly(fx, fy - 3, 3.6, c, 5);
+  }
+  // ogonek: mały kłębek, merda
+  const wag = Math.sin(G.t * (P.state === 'happy' || running ? 24 : 8)) * 3;
+  curly(-14 + wag * .3, (sitting ? -12 : -21) - Math.abs(wag) * .4, 4.2, MID, 6);
+  // tułów
+  curly(-6, sitting ? -11 : -15, 7.5, MID, 8);
+  curly(5, -16, 8, LIGHT, 8);
+  // głowa (duża, okrągła jak u misia)
+  const hx = 11, hy = -30;
+  curly(hx + 6, hy + 3, 5, DARK, 6);                                   // dalsze ucho
+  curly(hx, hy, 9, LIGHT, 9);
+  puff(hx - 2, hy - 3, 5, HI);                                         // jaśniejszy czubek
+  // pyszczek: krótki i puchaty
+  curly(hx + 7, hy + 4, 4.2, HI, 6);
+  puff(hx + 10.5, hy + 2.5, 1.8, '#1a0d06');                           // nos
+  puff(hx + 1.5, hy - 1, 1.5, '#1a0d06'); puff(hx + 6.5, hy - 1.2, 1.5, '#1a0d06');   // oczy
+  puff(hx + 2, hy - 1.5, .5, '#fff'); puff(hx + 7, hy - 1.7, .5, '#fff');
+  if (P.state === 'happy'){ ctx.fillStyle = '#e0507a'; ctx.beginPath(); ctx.ellipse(hx + 8, hy + 8.5, 1.6, 2.4, 0, 0, Math.PI*2); ctx.fill(); }
+  // bliższe ucho: długie, w lokach, w locie podrywa się do góry
+  ctx.save(); ctx.translate(hx - 6, hy - 2); ctx.rotate(falling ? -2.2 : 0.12);
+  curly(0, 4, 4.2, MID, 6); curly(-.5, 9, 4.2, MID, 6); curly(0, 13, 3.6, MID, 6);
+  ctx.restore();
+  ctx.restore();
+}
+
 function drawGaugeFace(c, cx, cy, r, v){
   const ang = a => Math.PI + (a / 100) * Math.PI;
   c.save();
@@ -681,7 +790,9 @@ function updateGuest(dt){
     Gw.x += (Gw.target - Gw.x >= 0 ? 1 : -1) * 130 * dt;
     if (Math.abs(Gw.x - Gw.target) < 4){ Gw.x = Gw.target; Gw.state = 'talk'; Gw.t = 0; }
   } else if (Gw.state === 'talk'){
-    if (Gw.t > 3){ Gw.state = 'leave'; Gw.t = 0; }
+    // po 3 s robotnik odpowiada, a pani z BHP chwilę słucha i dopiero wychodzi
+    if (Gw.t > 3 && !Gw.replied){ Gw.replied = true; G.workerSay = { text: 'Dostałem od Sławka!', t: 2.5 }; }
+    if (Gw.t > 5.3){ Gw.state = 'leave'; Gw.t = 0; }
   } else {
     Gw.walk += dt * 8;
     Gw.x += 130 * dt;
@@ -895,6 +1006,17 @@ function drawPizda(Z){
   ctx.fillStyle = '#1a1a1a'; ctx.fillRect(hx + face * 3 - 1, hy - 2, 2.5, 1.5); ctx.fillRect(hx + face * 7 - 1, hy - 2, 2, 1.5);
   ctx.strokeStyle = '#3a2b20'; ctx.lineWidth = 1.5; ctx.beginPath();
   ctx.moveTo(hx + face * 1, hy - 6); ctx.lineTo(hx + face * 5, hy - 5); ctx.moveTo(hx + face * 6, hy - 5); ctx.lineTo(hx + face * 9, hy - 6); ctx.stroke();
+  // złote okulary: dwie oprawki, mostek i zausznik biegnący do ucha
+  const g1 = hx + face * 3.3, g2 = hx + face * 7.6, gy = hy - 1.3;
+  ctx.fillStyle = 'rgba(200,225,240,.22)';
+  ctx.beginPath(); ctx.ellipse(g1, gy, 2.9, 2.4, 0, 0, Math.PI*2); ctx.ellipse(g2, gy, 2.3, 2.4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#d4a52a'; ctx.lineWidth = 1.1; ctx.beginPath();
+  ctx.ellipse(g1, gy, 2.9, 2.4, 0, 0, Math.PI*2);
+  ctx.moveTo(g2 + 2.3, gy); ctx.ellipse(g2, gy, 2.3, 2.4, 0, 0, Math.PI*2);
+  ctx.moveTo(g1 + face * 2.9, gy - .6); ctx.lineTo(g2 - face * 2.3, gy - .6);
+  ctx.moveTo(g1 - face * 2.9, gy - .4); ctx.lineTo(hx - face * 6, gy - 1);
+  ctx.stroke();
+  ctx.fillStyle = '#ffe28a'; ctx.fillRect(g1 - 1.5, gy - 2.6, 1.2, .8);
   ctx.strokeStyle = '#6e3a2a'; ctx.lineWidth = 1.8; ctx.beginPath();
   if (talking){ const o = Math.abs(Math.sin(Z.t * 12)) * 2; ctx.ellipse(hx + face * 5, hy + 5, 2.5, 0.6 + o, 0, 0, Math.PI*2); }
   else { ctx.moveTo(hx + face * 2, hy + 5); ctx.lineTo(hx + face * 8, hy + 5); }
@@ -1052,48 +1174,83 @@ function drawBox(type, cx, y, rot=0, alpha=1){
 }
 
 function drawGuestWoman(Gw){
-  const x = Gw.x, f = FLOOR, talking = Gw.state === 'talk';
+  // pani z BHP: biały kask, żółta kamizelka odblaskowa, spodnie robocze, buty ochronne, ciemny blond, podkładka z listą kontrolną
+  const x = Gw.x, f = FLOOR, talking = Gw.state === 'talk' && Gw.t < 3;
   const la = talking ? 0 : Math.sin(Gw.walk) * 0.4;
+  const face = Gw.state === 'leave' ? 1 : -1;
+  const skin = '#e6ae86', HAIR = '#9c7a45', HAIR_D = '#7f6136';
+  const VEST = '#d8f02a', VEST_D = '#b9d01c', REFL = '#e9eef2', PANTS = '#2e3a4a';
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f + 2, 17, 4, 0, 0, Math.PI*2); ctx.fill();
-  // nogi + baleriny
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f + 2, 18, 4, 0, 0, Math.PI*2); ctx.fill();
+  // nogi: spodnie robocze z paskiem odblaskowym + buty ochronne z noskiem
   for (const s of [-1, 1]){
-    ctx.save(); ctx.translate(x + s*5, f - 30); ctx.rotate(la * s * 0.4);
-    ctx.fillStyle = '#2c2c34'; ctx.fillRect(-4, 0, 8, 20);
-    ctx.fillStyle = '#e0a97e'; ctx.fillRect(-4 + (s > 0 ? 1 : -3), 18, 8, 4);
+    ctx.save(); ctx.translate(x + s*5, f - 32); ctx.rotate(la * s * 0.45);
+    ctx.fillStyle = PANTS; ctx.fillRect(-4.5, 0, 9, 24);
+    ctx.fillStyle = REFL; ctx.fillRect(-4.5, 15, 9, 2.5);
+    ctx.fillStyle = '#141416'; rr(-6 + face * 2, 20, 13, 10, 2); ctx.fill();            // cholewka za kostkę
+    ctx.fillStyle = '#c9a23a'; ctx.fillRect(-6 + face * 2, 20, 13, 1.6);                 // żółte obszycie
+    ctx.fillStyle = '#8a9098'; ctx.fillRect(face > 0 ? 3.5 : -6.5, 24, 3.5, 5);           // metalowy nosek
+    ctx.fillStyle = '#6b7078'; ctx.fillRect(-6.5 + face * 2, 29, 14, 3);                 // gruba podeszwa
     ctx.restore();
   }
-  // spódnica ołówkowa
-  ctx.fillStyle = '#33333d'; ctx.beginPath();
-  ctx.moveTo(x - 10, f - 46); ctx.lineTo(x + 10, f - 46); ctx.lineTo(x + 7, f - 26); ctx.lineTo(x - 7, f - 26); ctx.closePath(); ctx.fill();
-  // bluzka
-  ctx.fillStyle = '#e7d9c9'; ctx.beginPath();
-  ctx.moveTo(x - 11, f - 70); ctx.lineTo(x + 11, f - 70); ctx.lineTo(x + 9, f - 46); ctx.lineTo(x - 9, f - 46); ctx.closePath(); ctx.fill();
-  // ręce
-  const skin = '#e0a97e';
-  ctx.strokeStyle = skin; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
+  // tułów: ciemna koszulka polo pod kamizelką
+  ctx.fillStyle = '#34465c'; rr(x - 11, f - 66, 22, 34, 4); ctx.fill();
+  // kamizelka odblaskowa
+  ctx.fillStyle = VEST; ctx.beginPath();
+  ctx.moveTo(x - 12, f - 64); ctx.lineTo(x - 4, f - 66); ctx.lineTo(x - 2, f - 52); ctx.lineTo(x + 2, f - 52); ctx.lineTo(x + 4, f - 66);
+  ctx.lineTo(x + 12, f - 64); ctx.lineTo(x + 12, f - 33); ctx.lineTo(x - 12, f - 33); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = VEST_D; ctx.fillRect(x - 0.6, f - 52, 1.2, 19);
+  ctx.fillStyle = REFL; ctx.fillRect(x - 12, f - 46, 24, 3); ctx.fillRect(x - 12, f - 39, 24, 3);
+  ctx.fillRect(x - 9, f - 64, 2.5, 12); ctx.fillRect(x + 6.5, f - 64, 2.5, 12);
+  // identyfikator
+  ctx.fillStyle = '#fff'; ctx.fillRect(x + 4, f - 58, 6, 4); ctx.fillStyle = '#2f6fb3'; ctx.fillRect(x + 4, f - 58, 6, 1.3);
+  // ręce: jedna trzyma podkładkę z listą kontrolną, druga gestykuluje przy rozmowie
+  ctx.strokeStyle = '#34465c'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
+  const cx = x + face * 13, cy = f - 50;
   if (talking){
     const g = Math.sin(Gw.t * 8) * 4;
-    ctx.moveTo(x - 10, f - 64); ctx.lineTo(x - 18, f - 52); ctx.lineTo(x - 14, f - 40);
-    ctx.moveTo(x + 10, f - 64); ctx.lineTo(x + 17, f - 56 + g * .3); ctx.lineTo(x + 12, f - 46 + g);
+    ctx.moveTo(x + face * 10, f - 62); ctx.lineTo(x + face * 15, f - 55); ctx.lineTo(cx, cy);
+    ctx.moveTo(x - face * 10, f - 62); ctx.lineTo(x - face * 17, f - 58 + g * .3); ctx.lineTo(x - face * 20, f - 70 + g);
   } else {
     const a = Math.sin(Gw.walk) * 6;
-    ctx.moveTo(x - 10, f - 64); ctx.lineTo(x - 13 - a * .3, f - 52); ctx.lineTo(x - 11 + a, f - 42);
-    ctx.moveTo(x + 10, f - 64); ctx.lineTo(x + 13 + a * .3, f - 52); ctx.lineTo(x + 11 - a, f - 42);
+    ctx.moveTo(x + face * 10, f - 62); ctx.lineTo(x + face * 15, f - 55); ctx.lineTo(cx, cy);
+    ctx.moveTo(x - face * 10, f - 62); ctx.lineTo(x - face * 13 - a * .3, f - 50); ctx.lineTo(x - face * 11 + a, f - 40);
   }
   ctx.stroke();
+  // dłonie
+  ctx.fillStyle = skin; ctx.beginPath();
+  if (talking){ const g = Math.sin(Gw.t * 8) * 4; ctx.arc(x - face * 20, f - 71 + g, 3, 0, 7); }
+  else { const a = Math.sin(Gw.walk) * 6; ctx.arc(x - face * 11 + a, f - 39, 3, 0, 7); }
+  ctx.fill();
+  // podkładka z kartką
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(face * -0.25);
+  ctx.fillStyle = '#7a5230'; ctx.fillRect(-6, -9, 12, 16);
+  ctx.fillStyle = '#f4f1ea'; ctx.fillRect(-4.5, -6.5, 9, 12.5);
+  ctx.fillStyle = '#9aa1a9'; for (let i = 0; i < 4; i++) ctx.fillRect(-3, -4.5 + i * 3, 6, 0.9);
+  ctx.fillStyle = '#b8bec6'; ctx.fillRect(-2.5, -10, 5, 2.5);
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, 4, 2.8, 0, 7); ctx.fill();
+  ctx.restore();
   // głowa
-  const hx = x, hy = f - 78;
-  ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(hx, hy, 8.5, 9.5, 0, 0, Math.PI*2); ctx.fill();
-  // blond włosy: grzywka + kucyk
-  ctx.fillStyle = '#e8c765';
-  ctx.beginPath(); ctx.ellipse(hx, hy - 3, 8.2, 7, 0, Math.PI, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(hx + 9, hy + 2, 4, 9, 0.3, 0, Math.PI * 2); ctx.fill();
+  const hx = x, hy = f - 76;
+  // włosy ciemny blond: spod kasku wychodzi niski kucyk za plecami
+  ctx.fillStyle = HAIR_D; ctx.beginPath(); ctx.ellipse(hx - face * 8, hy + 5, 3.8, 8, face * 0.35, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(hx, hy + 1, 8, 9, 0, 0, Math.PI*2); ctx.fill();
+  // grzywka i boki spod kasku
+  ctx.fillStyle = HAIR;
+  ctx.beginPath(); ctx.ellipse(hx, hy - 3, 8.4, 5, 0, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.fillRect(hx - 8.4, hy - 3, 2.2, 7); ctx.fillRect(hx + 6.2, hy - 3, 2.2, 7);
+  ctx.beginPath(); ctx.moveTo(hx - 7, hy - 3); ctx.quadraticCurveTo(hx - face * 3, hy - 0.5, hx + 7, hy - 3); ctx.fill();
+  // biały kask (typowy dla BHP / nadzoru) z daszkiem i paskiem
+  ctx.fillStyle = '#f4f5f2'; ctx.beginPath(); ctx.arc(hx, hy - 5, 10, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = '#dcdfdb'; ctx.fillRect(hx - 1.2, hy - 15, 2.4, 10);
+  ctx.fillStyle = '#f4f5f2'; ctx.fillRect(hx - 12 + face * 2, hy - 6, 24, 3);
+  ctx.fillStyle = '#2f6fb3'; ctx.fillRect(hx - 5, hy - 10, 3, 3);                         // naklejka
+  ctx.strokeStyle = '#3a3a3e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx - 7.5, hy - 3); ctx.lineTo(hx - 5, hy + 8); ctx.stroke();
   // twarz
-  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(hx - 4, hy - 1, 1.6, 2.4); ctx.fillRect(hx + 2, hy - 1, 1.6, 2.4);
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(hx - 4 + face, hy + 1, 1.6, 2.3); ctx.fillRect(hx + 2 + face, hy + 1, 1.6, 2.3);
   ctx.strokeStyle = '#a8506a'; ctx.lineWidth = 1.3; ctx.beginPath();
-  if (talking){ const o = Math.abs(Math.sin(Gw.t * 10)) * 1.6; ctx.ellipse(hx, hy + 5, 2, 0.6 + o, 0, 0, Math.PI*2); }
-  else { ctx.moveTo(hx - 2, hy + 5); ctx.lineTo(hx + 2, hy + 5); }
+  if (talking){ const o = Math.abs(Math.sin(Gw.t * 10)) * 1.6; ctx.ellipse(hx + face, hy + 6, 2, 0.6 + o, 0, 0, Math.PI*2); }
+  else { ctx.moveTo(hx - 2 + face, hy + 6); ctx.lineTo(hx + 2 + face, hy + 6); }
   ctx.stroke();
   ctx.restore();
 }
@@ -1319,7 +1476,9 @@ function draw(){
   if (G.boss) drawMoodChar(G.boss.x, FLOOR - 98, 2, () => drawBoss(G.boss));
   if (G.pizda) drawMoodChar(G.pizda.x, FLOOR - 105, 3, () => drawPizda(G.pizda));
   if (G.guest) drawGuestWoman(G.guest);
+  if (G.paris && G.paris.state === 'tele') drawParis(G.paris);
   drawMoodChar(G.player.x, FLOOR - 96, 0, () => drawWorker(G.player));
+  if (G.paris && G.paris.state !== 'tele') drawParis(G.paris);
   for (const n of G.notes) drawNote(n);
 
   // flying boxes into truck
@@ -1358,7 +1517,8 @@ function draw(){
     if (G.pizda && G.pizda.state === 'talk') drawBubble('No i panowie jest pizda', G.pizda.x + 4, FLOOR - 200, '#222', 0);
     if (caller && caller.x < W - 20) drawBubble('Radziu, transport rusza!', caller.x - 4, FLOOR - 150, '#1f3a66', 0);
     if (G.workerSay) drawBubble(G.workerSay.text, G.player.x, Math.max(44, stackTop() - 58), '#b8520f', 0);
-    if (G.guest && G.guest.state === 'talk') drawBubble('Dobrze, że miałeś kask!', G.guest.x - 4, FLOOR - 170, '#a8437a', 0);
+    if (G.paris && G.paris.say > 0 && G.paris.state !== 'tele') drawBubble('Hau! Hau!', G.paris.x, Math.max(60, G.paris.y - 95), '#c2407a', 0);
+    if (G.guest && G.guest.state === 'talk' && G.guest.t < 3) drawBubble('Dobrze, że miałeś kask!', G.guest.x - 4, FLOOR - 170, '#a8437a', 0);
   } else if (G.mood === 'happy' && G.boss && G.moodT > 3){
     drawBubble('Można? MOŻNA!', G.boss.x, FLOOR - 200, '#d0262d', 2);
   }
