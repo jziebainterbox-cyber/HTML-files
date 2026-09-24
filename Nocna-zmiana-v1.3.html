@@ -1,0 +1,1635 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rampa Załadunkowa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Barlow+Condensed:wght@500;700&family=Montserrat:wght@300;800&family=Dancing+Script:wght@700&display=swap">
+<style>
+  :root{
+    --ground:#14181d; --panel:#1d232b; --ink:#e9e4da; --muted:#9aa1a9;
+    --kraft:#b98550; --vis:#ff7a1a; --safety:#ffcc1a;
+    color-scheme:dark;
+  }
+  [hidden]{display:none!important}
+  html,body{height:100%;overflow:hidden}
+  body{margin:0;background:#07090b;color:var(--ink);font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;font-size:17px;}
+  .game{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#07090b}
+  .panel{width:100%;max-width:640px;margin:auto;display:flex;flex-direction:column;gap:16px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{margin:0;font-family:"Saira Stencil One",Impact,sans-serif;font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:.04em;color:var(--kraft);text-wrap:balance}
+  h1 span{color:var(--safety)}
+  h1 .where{font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;font-size:16px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .best{color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-size:15px;font-variant-numeric:tabular-nums}
+  .stage{position:relative;width:min(100vw,calc(100vh * 16 / 9));width:min(100vw,calc(100dvh * 16 / 9));aspect-ratio:16/9;overflow:hidden;background:#0e1115}
+  canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+  .overlay{position:fixed;inset:0;display:flex;background:rgba(10,12,15,.42);padding:16px;overflow:auto}
+  .overlay.ending{background:rgba(10,12,15,.36)}
+  .card{max-width:520px;display:flex;flex-direction:column;gap:12px;text-align:left;background:rgba(8,10,13,.8);padding:18px 20px;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  .card h2{margin:0;font-family:"Saira Stencil One",Impact,sans-serif;font-weight:400;font-size:clamp(28px,5vw,46px);line-height:1;color:var(--safety);letter-spacing:.03em}
+  .card p{margin:0;line-height:1.35;color:var(--ink);font-size:clamp(15px,2vw,19px)}
+  .card .stamp{display:inline-block;border:2px solid var(--vis);color:var(--vis);padding:2px 10px;transform:rotate(-2deg);font-family:"Saira Stencil One",Impact,sans-serif;letter-spacing:.08em;align-self:flex-start}
+  .oeeReport{display:flex;align-items:center;gap:14px}
+  .oeeReport canvas{flex:none}
+  .oeeReportText{flex:1}
+  .legend{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:clamp(14px,1.9vw,17px);color:var(--muted)}
+  .legend b{color:var(--ink);font-weight:700}
+  button{font:inherit;font-weight:700;font-size:20px;letter-spacing:.06em;text-transform:uppercase;background:var(--safety);color:#1a1a1a;border:0;border-radius:3px;padding:10px 22px;cursor:pointer;align-self:flex-start;
+    background-image:repeating-linear-gradient(-45deg,transparent 0 12px,rgba(0,0,0,.12) 12px 24px)}
+  button:hover{filter:brightness(1.08)}
+  button:focus-visible{outline:3px solid var(--vis);outline-offset:3px}
+  .help{display:flex;gap:8px 20px;flex-wrap:wrap;color:var(--muted);font-size:15px;letter-spacing:.03em}
+  kbd{font:inherit;font-weight:700;color:var(--ink);border:1px solid #3a424c;border-bottom-width:2px;border-radius:3px;padding:0 6px;background:var(--panel)}
+</style>
+
+<div class="game">
+  <div class="stage" id="stage">
+    <canvas id="game" width="960" height="540" aria-label="Gra: pracownik łapie kartony i ładuje je na auto"></canvas>
+  </div>
+  <div class="overlay" id="ovl">
+    <div class="panel">
+      <header>
+        <h1>Rampa <span>Załadunkowa</span> <small class="where">Inter-Box · Olszewo-Borki</small></h1>
+        <div class="best" id="bestLbl">Rekord: 0</div>
+      </header>
+      <div class="card" id="card">
+        <span class="stamp">ZMIANA NOCNA</span>
+        <h2>Łap kartony, ładuj auto</h2>
+        <p>Hala Inter-Box w Olszewie-Borkach. Kartony wyjeżdżają z Curioni taśmą pod sufitem i spadają przez luki, a na rampie czeka auto JBB z Łysych. Łap kartony, podejdź do rampy i załaduj JBB przed odjazdem. Karton na podłodze = reklamacja. Pięć reklamacji i koniec zmiany.</p>
+        <div class="legend">
+          <b>Zwykły</b><span>10 pkt · 1 miejsce</span>
+          <b>Szkło (czerwona etykieta)</b><span>25 pkt</span>
+          <b>Zielony ZERO-E</b><span>15 pkt · 1 miejsce</span>
+          <b>Ciężki 30 kg</b><span>30 pkt · 2 miejsca, spowalnia</span>
+          <b>Wirująca paleta</b><span>omijaj, ogłusza i strąca karton</span>
+          <b>Kawa / apteczka</b><span>przyspieszenie / −1 reklamacja</span>
+          <b>Paris, brązowy pudel</b><span>spada raz na jakiś czas — złap ją, kasuje wszystkie reklamacje</span>
+          <b>Prezes</b><span>„Jazda z kurwami!” i rzuca stówą: złap = dopalacz</span>
+        </div>
+        <button id="startBtn" type="button">Start zmiany</button>
+      </div>
+      <div class="help">
+        <span><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> ruch</span>
+        <span>stań na żółtej rampie = rozładunek</span>
+        <span><kbd>Spacja</kbd> rzut kartonem do auta — działa tylko w zasięgu</span>
+        <span><kbd>P</kbd> pauza</span>
+        <span><kbd>M</kbd> dźwięk</span>
+        <span><kbd>F</kbd> pełny ekran</span>
+        <span>dotyk: lewa / prawa połowa ekranu</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const cv = document.getElementById('game'), ctx = cv.getContext('2d');
+const ovl = document.getElementById('ovl'), card = document.getElementById('card');
+const bestLbl = document.getElementById('bestLbl');
+const W = 960, H = 540, FLOOR = 468, TPARK = 640, DOCK_X = 582, P_MAX_X = 618;
+const MAX_UNITS = 8, MAX_STRIKES = 5, CUR_X = 150;
+const HUD_FONT = '"Barlow Condensed","Arial Narrow",Arial,sans-serif';
+const STENCIL = '"Saira Stencil One",Impact,sans-serif';
+
+const TYPES = {
+  box:     { w:40, h:34, u:1, pts:10 },
+  zero:    { w:40, h:34, u:1, pts:15 },
+  fragile: { w:38, h:32, u:1, pts:25 },
+  heavy:   { w:58, h:45, u:2, pts:30 },
+  pallet:  { w:38, h:16, hazard:true },
+  coffee:  { w:22, h:26, power:true },
+  medkit:  { w:32, h:24, power:true },
+};
+const TRUCK_COLORS = ['#d9e1ea', '#2f6fb3', '#c9412f', '#3c8a55', '#e0b12a'];
+
+let scale = 1, bg = null, G = null, running = false, paused = false, muted = false, lastT = 0;
+let endRunning = false, lastEndT = 0;
+const keys = { left:false, right:false }, touch = { left:0, right:0 };
+
+function loadBest(){ try { return +localStorage.getItem('rampa_best') || 0; } catch(e){ return 0; } }
+function saveBest(v){ try { localStorage.setItem('rampa_best', v); } catch(e){} }
+bestLbl.textContent = 'Rekord: ' + loadBest();
+
+/* ---------- audio ---------- */
+let ac = null;
+function beep(freq, dur, type='square', vol=0.05, slide=0){
+  if (muted) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur);
+  } catch(e){}
+}
+const sfx = {
+  catch: () => beep(520, .07, 'square', .04, 180),
+  load:  () => beep(300, .06, 'triangle', .07, -80),
+  crash: () => { beep(140, .25, 'sawtooth', .06, -90); beep(90, .3, 'square', .04, -40); },
+  bounce:() => beep(240, .12, 'square', .05, -120),
+  bonk:  () => beep(110, .2, 'square', .08, -60),
+  cash:  () => { beep(1320,.06,'square',.05); setTimeout(()=>beep(1760,.05,'square',.05),60); setTimeout(()=>beep(2200,.18,'triangle',.05),120); },
+  ring:  () => { for (let i = 0; i < 4; i++) setTimeout(() => beep(i % 2 ? 1300 : 1000, .08, 'square', .035), i * 90); },
+  yell:  () => { beep(180,.09,'sawtooth',.04,60); setTimeout(()=>beep(200,.12,'sawtooth',.04,80),120); },
+  power: () => { beep(660, .08, 'triangle', .06); setTimeout(()=>beep(990,.12,'triangle',.06),70); },
+  horn:  () => { beep(220, .35, 'sawtooth', .05); beep(277, .35, 'sawtooth', .04); },
+  over:  () => { beep(300,.2,'sawtooth',.06,-100); setTimeout(()=>beep(200,.4,'sawtooth',.06,-120),200); },
+  toss:  () => beep(420, .07, 'triangle', .05, 160),
+  bark:  () => { beep(760, .07, 'square', .05, -380); setTimeout(()=>beep(820, .09, 'square', .05, -420), 140); },
+};
+
+/* ---------- sizing & background ---------- */
+function resize(){
+  const r = cv.getBoundingClientRect();
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.max(1, Math.round(r.width * d));
+  cv.height = Math.max(1, Math.round(r.height * d));
+  scale = cv.width / W;
+  bg = renderBackground();
+  if (!running) draw();
+}
+function renderBackground(){
+  const c = document.createElement('canvas');
+  c.width = cv.width; c.height = cv.height;
+  const b = c.getContext('2d');
+  b.setTransform(scale,0,0,scale,0,0);
+  const gr = b.createLinearGradient(0,0,0,FLOOR);
+  gr.addColorStop(0,'#10141a'); gr.addColorStop(1,'#1f262f');
+  b.fillStyle = gr; b.fillRect(0,0,W,FLOOR);
+  // pallet racks
+  const rackCol = '#5a2e1c', beamCol = '#7a3b22';
+  for (let rx = 20; rx < 560; rx += 180){
+    for (const ux of [rx, rx+160]) { b.fillStyle = rackCol; b.fillRect(ux, 90, 8, FLOOR-90); }
+    for (let ly = 150; ly < FLOOR; ly += 105){
+      b.fillStyle = beamCol; b.fillRect(rx, ly, 168, 7);
+      // dim stored boxes
+      let bx = rx + 12;
+      while (bx < rx + 150){
+        const bw = 26 + ((bx*7+ly) % 20), bh = 30 + ((bx*3+ly) % 30);
+        if (bx + bw > rx + 158) break;
+        b.fillStyle = ((bx+ly) % 3 === 0) ? '#3b3024' : '#33291f';
+        b.fillRect(bx, ly - bh, bw, bh);
+        b.fillStyle = 'rgba(255,255,255,.04)'; b.fillRect(bx + bw/2 - 3, ly - bh, 6, bh);
+        bx += bw + 6;
+      }
+    }
+  }
+  // dock door frame behind truck
+  b.fillStyle = '#0c0f13'; b.fillRect(600, 110, 360, FLOOR-110);
+  b.fillStyle = '#2a323c'; b.fillRect(596, 104, 364, 10);
+  for (let y = 116; y < 180; y += 12){ b.fillStyle = y % 24 ? '#1a2029' : '#161b22'; b.fillRect(604, y, 356, 12); }
+  // ceiling beam + conveyor
+  b.fillStyle = '#262d36'; b.fillRect(0,0,W,34);
+  b.fillStyle = '#39424e'; b.fillRect(0,30,W,4);
+  for (let x = CUR_X; x < 580; x += 16){ b.fillStyle = (x/16)%2 ? '#1c2229' : '#2f3742'; b.fillRect(x, 8, 16, 16); }
+  b.fillStyle = '#11151a'; b.fillRect(CUR_X, 14, 580 - CUR_X, 4);
+  // Curioni machine (source of the boxes)
+  b.fillStyle = '#0b0e12'; b.fillRect(0, 58, CUR_X + 4, 6);
+  b.fillStyle = '#5d6b78'; b.fillRect(0, 0, CUR_X, 60);
+  b.fillStyle = '#4a5763'; b.fillRect(0, 44, CUR_X, 16);
+  b.fillStyle = '#ff7a1a'; b.fillRect(CUR_X - 26, 4, 22, 36);            // orange safety guard
+  b.fillStyle = 'rgba(0,0,0,.25)'; for (let y = 8; y < 40; y += 6) b.fillRect(CUR_X - 24, y, 18, 2);
+  b.fillStyle = '#1a1f25'; b.fillRect(10, 10, 92, 24);                   // name plate
+  b.fillStyle = '#eef1f4'; b.font = `800 17px Montserrat, Arial, sans-serif`; b.textAlign = 'center'; b.textBaseline = 'middle';
+  b.fillText('CURIONI', 56, 23);
+  b.textBaseline = 'alphabetic';
+  b.fillStyle = '#c9d0d7'; b.font = `700 10px ${HUD_FONT}`; b.textAlign = 'left'; b.fillText('KLEJARKA · LINIA 1', 10, 54);
+  b.fillStyle = '#23292f'; b.fillRect(CUR_X - 4, 10, 8, 18);             // outfeed slot
+  // stack light
+  b.fillStyle = '#2a2f35'; b.fillRect(112, 12, 6, 30);
+  b.fillStyle = '#2fbf5a'; b.fillRect(110, 30, 10, 7);
+  b.fillStyle = '#e0a21a'; b.fillRect(110, 22, 10, 7);
+  b.fillStyle = '#7a2020'; b.fillRect(110, 14, 10, 7);
+  // lamps glow
+  for (const lx of [150, 420, 780]){
+    const lg = b.createRadialGradient(lx, 40, 4, lx, 40, 260);
+    lg.addColorStop(0,'rgba(255,214,140,.16)'); lg.addColorStop(1,'rgba(255,214,140,0)');
+    b.fillStyle = lg; b.fillRect(lx-260, 34, 520, 380);
+    b.fillStyle = '#ffe2a8'; b.fillRect(lx-18, 34, 36, 4);
+  }
+  // Inter-Box sign on the wall
+  b.fillStyle = 'rgba(0,0,0,.35)'; b.fillRect(304, 46, 200, 44);
+  b.fillStyle = '#eeebe4'; b.fillRect(300, 42, 200, 44);
+  drawInterBox(b, 318, 64, 17, '#111');
+  // dock number above door
+  b.fillStyle = '#ffcc1a'; b.font = `18px ${STENCIL}`; b.textAlign = 'left'; b.fillText('RAMPA 3', 612, 100);
+  // floor
+  const fg = b.createLinearGradient(0,FLOOR,0,H);
+  fg.addColorStop(0,'#434a54'); fg.addColorStop(1,'#2b3038');
+  b.fillStyle = fg; b.fillRect(0,FLOOR,W,H-FLOOR);
+  b.fillStyle = 'rgba(255,255,255,.08)'; b.fillRect(0,FLOOR,W,2);
+  for (let x = 40; x < W; x += 120){ b.fillStyle = 'rgba(0,0,0,.18)'; b.fillRect(x, FLOOR+2, 2, H-FLOOR); }
+  // walkway line
+  b.fillStyle = '#ffcc1a'; b.globalAlpha = .55; b.fillRect(0, FLOOR+40, DOCK_X-10, 4); b.globalAlpha = 1;
+  // dock plate hazard stripes
+  b.save(); b.beginPath(); b.rect(DOCK_X-6, FLOOR, 70, 22); b.clip();
+  b.fillStyle = '#ffcc1a'; b.fillRect(DOCK_X-6, FLOOR, 70, 22);
+  b.fillStyle = '#16181b';
+  for (let x = DOCK_X-40; x < DOCK_X+80; x += 18){ b.beginPath(); b.moveTo(x,FLOOR+22); b.lineTo(x+9,FLOOR+22); b.lineTo(x+31,FLOOR); b.lineTo(x+22,FLOOR); b.fill(); }
+  b.restore();
+  b.fillStyle = 'rgba(255,204,26,.8)'; b.font = `700 13px ${HUD_FONT}`; b.textAlign = 'center';
+  b.fillText('STREFA ZAŁADUNKU', DOCK_X + 28, FLOOR + 40);
+  return c;
+}
+
+/* ---------- logos (drawn, not copied) ---------- */
+// Inter-Box: isometric striped cube + "INTER" light / "BOX" bold
+function drawInterBox(c, cx, cy, r, col){
+  const k = r * 0.866;
+  const T = [cx, cy - r], UR = [cx + k, cy - r/2], LR = [cx + k, cy + r/2], B = [cx, cy + r],
+        LL = [cx - k, cy + r/2], UL = [cx - k, cy - r/2], C = [cx, cy];
+  const face = (pts, dx, dy) => {
+    c.save(); c.beginPath(); c.moveTo(...pts[0]); for (const q of pts.slice(1)) c.lineTo(...q); c.closePath(); c.clip();
+    c.strokeStyle = col; c.lineWidth = r / 9; c.beginPath();
+    // lines along (dx,dy), spaced across the face
+    const nx = -dy, ny = dx;
+    for (let s = -2 * r; s <= 2 * r; s += r / 4.2){
+      c.moveTo(cx + nx*s - dx*2*r, cy + ny*s - dy*2*r); c.lineTo(cx + nx*s + dx*2*r, cy + ny*s + dy*2*r);
+    }
+    c.stroke(); c.restore();
+  };
+  face([T, UR, C, UL], 0.866, 0.5);
+  face([UL, C, B, LL], 0, 1);
+  face([C, UR, LR, B], 0.866, -0.5);
+  c.fillStyle = col; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.font = `300 ${Math.round(r*0.95)}px Montserrat, Arial, sans-serif`; c.fillText('INTER', cx + k + r*0.5, cy - r*0.08);
+  c.font = `800 ${Math.round(r*0.95)}px Montserrat, Arial, sans-serif`; c.fillText('BOX', cx + k + r*0.5, cy + r*0.92);
+}
+// JBB: red square, white "JBB", script "Bałdyga"
+const JBB_RED = '#C41E40', JBB_CREAM = '#FCD4A6';
+function drawJBB(c, x, y, s){
+  c.save();
+  c.fillStyle = JBB_RED; c.fillRect(x, y, s, s);
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  c.font = `800 ${Math.round(s*0.42)}px Montserrat, Arial, sans-serif`;
+  c.fillText('JBB', x + s/2, y + s*0.56);
+  c.fillStyle = JBB_CREAM; c.font = `700 ${Math.round(s*0.24)}px "Dancing Script", cursive`;
+  c.fillText('Bałdyga', x + s*0.56, y + s*0.84);
+  c.restore();
+}
+
+/* ---------- game state ---------- */
+function newTruck(level, parked){
+  const t = Math.max(34, 64 - level * 4);
+  return { x: parked ? TPARK : W + 40, state: parked ? 'parked' : 'arriving', cap: 15, units: 0,
+           cells: [], time: t, timeMax: t, delay: 0, n: level,
+           color: TRUCK_COLORS[(level - 1) % TRUCK_COLORS.length] };
+}
+function newGame(){
+  G = { score:0, level:1, strikes:0, combo:0, best: loadBest(), trucksDone:0,
+        boxes:[], tele:[], fly:[], parts:[], pops:[], spawnT:1.1, shake:0, t:0, over:false,
+        boss:null, bossT:12, notes:[], perfT:70, perfV:70, perfSum:0, perfN:0, perfSampleT:0, mood:null, moodT:0, moodPop:0, fireworks:[], fwT:0, bossReplyT:null, idleTalkT: 25 + Math.random() * 20,
+        guest:null, guestCd:0, saidHeavy:false, paris:null, parisT: 40 + Math.random() * 20,
+        player:{ x:300, vx:0, sw:0, stack:[], stun:0, boost:0, boostLabel:'', face:1, walk:0, unloadT:0, throwCd:0 },
+        truck: newTruck(1, true) };
+}
+const units = () => G.player.stack.reduce((s,t) => s + TYPES[t].u, 0);
+const mult = () => 1 + Math.min(4, Math.floor(G.combo / 6)) * 0.5;
+const swayOff = i => -G.player.sw * 0.0065 * i * i;
+function stackTop(){ let y = FLOOR - 84; for (const t of G.player.stack) y -= TYPES[t].h; return y; }
+
+function pop(text, x, y, color='#e9e4da', size=22){ G.pops.push({ text, x, y, color, size, t:0 }); }
+function burst(x, y, color, n=14){
+  for (let i = 0; i < n; i++) G.parts.push({ x, y, vx:(Math.random()-.5)*320, vy:-Math.random()*260-40,
+    r:Math.random()*Math.PI, vr:(Math.random()-.5)*12, s:3+Math.random()*6, c:color, life:.9+Math.random()*.4 });
+}
+const FIREWORK_COLORS = ['#ffcc1a', '#7fe08f', '#ff7a1a', '#6fb6ff', '#ff5a4a', '#d19eff'];
+function spawnFirework(){
+  const x = 50 + Math.random() * (W - 100);
+  const apex = 70 + Math.random() * 140;
+  G.fireworks.push({ x, y: FLOOR - 20, apex, vy: -460 - Math.random() * 120, color: FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)] });
+}
+
+function pickType(){
+  const L = G.level, r = Math.random();
+  if (L >= 2 && r < Math.min(0.06 + L * 0.015, 0.17)) return 'pallet';
+  const r2 = Math.random();
+  if (r2 < 0.035) return 'coffee';
+  if (r2 < 0.035 + (G.strikes > 0 ? 0.13 + G.strikes * 0.025 : 0)) return 'medkit';
+  if (r2 < 0.30) return 'fragile';
+  if (L >= 2 && r2 < 0.43) return 'heavy';
+  if (r2 < 0.60) return 'zero';
+  return 'box';
+}
+function queueSpawn(){
+  // next drop stays within reach of the previous one (max ~220 px apart)
+  const last = G.lastX ?? 360;
+  const lo = Math.max(170, last - 220), hi = Math.min(560, last + 220);
+  const x = lo + Math.random() * (hi - lo);
+  G.lastX = x;
+  // box rides the belt out of the Curioni, then drops through the hatch
+  const t = 0.5 + (x - CUR_X) / 700;
+  G.tele.push({ x, t, t0: t, type: pickType() });
+}
+
+/* ---------- update ---------- */
+function update(dt){
+  G.t += dt;
+  const p = G.player, T = G.truck, L = G.level;
+
+  // player
+  const u = units();
+  const turbo = p.boost > 0 && p.boostLabel === 'DOPALACZ';
+  const speed = 390 * (turbo ? 1 : 1 - 0.075 * u) * (p.boost > 0 ? (turbo ? 1.8 : 1.45) : 1);
+  let dir = (keys.left || touch.left ? -1 : 0) + (keys.right || touch.right ? 1 : 0);
+  if (p.stun > 0){ p.stun -= dt; dir = 0; }
+  if (p.boost > 0) p.boost -= dt;
+  if (p.throwCd > 0) p.throwCd -= dt;
+  p.vx += (dir * speed - p.vx) * Math.min(1, dt * 11);
+  p.x += p.vx * dt;
+  if (p.x < 26){ p.x = 26; p.vx = 0; }
+  if (p.x > P_MAX_X){ p.x = P_MAX_X; p.vx = 0; }
+  if (dir) p.face = dir;
+  p.walk += Math.abs(p.vx) * dt * 0.045;
+  p.sw += (p.vx - p.sw) * Math.min(1, dt * 5);
+
+  // spawns
+  G.spawnT -= dt;
+  if (G.spawnT <= 0){
+    queueSpawn();
+    // one box at a time; gap shrinks gently and never below ~1.15 s
+    G.spawnT = Math.max(1.15, 1.75 - (L - 1) * 0.06) * (0.9 + Math.random() * 0.2);
+  }
+  for (const t of G.tele){
+    t.t -= dt;
+    if (t.t <= 0){
+      const d = TYPES[t.type];
+      // paleta wiruje wyraźnie szybciej niż zwykłe kartony
+      const vr = d.hazard ? (Math.random() < .5 ? -1 : 1) * (4 + Math.random() * 2) : (Math.random() - .5) * .6;
+      G.boxes.push({ type:t.type, x:t.x, y:22 - d.h, w:d.w, h:d.h, vx:0, vy:15, rot:0, vr, bounced:false });
+    }
+  }
+  G.tele = G.tele.filter(t => t.t > 0);
+
+  // falling boxes
+  // 0.9 speed: gravity × 0.81 and top speed × 0.9 → every fall is 10% slower
+  // fall speed grows a little per truck and stops growing after truck 6
+  const lv = Math.min(L, 6);
+  const g = (116 + lv * 6) * 0.81, vmax = (167 + lv * 7) * 0.9;
+  for (const b of G.boxes){
+    if (b.dead) continue;
+    const prevBottom = b.y + b.h;
+    if (b.type === 'medkit' && b.ground){
+      // lying on the floor: blinks for a while, walk over it to grab it
+      b.life -= dt;
+      if (Math.abs(b.x - p.x) < b.w / 2 + 20) catchBox(b, p.x, stackTop());
+      else if (b.life <= 0) b.dead = true;
+      continue;
+    }
+    b.vy = Math.min(vmax, b.vy + g * dt);
+    if (b.bounced){ b.vx *= Math.max(0, 1 - dt * 1.2); b.vr *= Math.max(0, 1 - dt * 1.5); }   // air drag so it stays catchable
+    b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt;
+    if (b.x < 10 || b.x > P_MAX_X + 10) b.vx *= -0.5, b.x = Math.max(10, Math.min(P_MAX_X + 10, b.x));
+    if (b.type === 'medkit'){
+      // any touch counts: stack, head, body or legs
+      if (b.y + b.h >= stackTop() && Math.abs(b.x - p.x) < b.w / 2 + 24){ catchBox(b, p.x, stackTop()); continue; }
+      if (b.y + b.h >= FLOOR){ b.y = FLOOR - b.h; b.vx = b.vy = 0; b.rot = 0; b.ground = true; b.life = 6; }
+      continue;
+    }
+    // a bounced / knocked-off box is catchable again once it is falling back down
+    if (!b.bounced || b.vy > 0){
+      const top = stackTop(), n = p.stack.length;
+      const cx = p.x + swayOff(n);
+      const half = n ? TYPES[p.stack[n-1]].w / 2 : 22;
+      if (prevBottom <= top + 8 && b.y + b.h >= top && Math.abs(b.x - cx) < b.w / 2 + half - 4){
+        catchBox(b, cx, top); continue;
+      }
+    }
+    if (b.y + b.h >= FLOOR) land(b);
+  }
+  G.boxes = G.boxes.filter(b => !b.dead);
+
+  // unloading
+  if (T.state === 'parked' && p.x >= DOCK_X && p.stack.length && T.units < T.cap){
+    p.unloadT -= dt;
+    if (p.unloadT <= 0){
+      p.unloadT = turbo ? 0.06 : 0.13;
+      const type = p.stack.pop();
+      loadOne(type, p.x, stackTop(), '+' + Math.round(TYPES[type].pts * mult()));
+    }
+  } else p.unloadT = Math.min(p.unloadT, 0.06);
+
+  // flying boxes
+  for (const f of G.fly){
+    f.t += dt / 0.28;
+    if (f.t >= 1 && !f.done){ f.done = true; for (const i of f.idx) T.cells[i] = f.type; }
+  }
+  G.fly = G.fly.filter(f => !f.done);
+
+  // truck
+  if (T.state === 'parked'){
+    T.time -= dt;
+    if (T.time <= 0){
+      T.time = 0; T.state = 'closing'; T.delay = 0.3;
+      addStrike('JBB odjeżdża niepełne!', 720, 200); perf(-25);
+      sfx.horn();
+    }
+  } else if (T.state === 'closing'){
+    T.delay -= dt; if (T.delay <= 0){ T.state = 'leaving'; T.v = 20; }
+  } else if (T.state === 'leaving'){
+    T.v += 520 * dt; T.x += T.v * dt;
+    if (T.x > W + 60) G.truck = newTruck(G.level, false);
+  } else if (T.state === 'arriving'){
+    T.x -= Math.max(60, (T.x - TPARK) * 3.2) * dt;
+    if (T.x <= TPARK){ T.x = TPARK; T.state = 'parked'; }
+  }
+
+  // driver on the phone once the truck is almost full
+  // two rows loaded (10 of 15): the worker tells someone to call Radziu
+  if (!T.workerSaid && T.units >= 10){ T.workerSaid = true; G.workerSay = { text: 'Dzwoń do Radzia!', t: 2.8 }; sfx.yell(); }
+  if (G.workerSay){ G.workerSay.t -= dt; if (G.workerSay.t <= 0) G.workerSay = null; }
+  // 2 pełne rzędy (10 szt.) + 1 paczka: kierowca z brzuchem dzwoni do Radzia
+  if (T.state === 'parked' && !T.caller && T.units >= 11){ T.caller = { x: W + 30, t: 0 }; sfx.ring(); }
+  if (T.caller){ T.caller.t += dt; T.caller.x = Math.max(914, T.caller.x - 150 * dt); }
+
+  // robotnik gada sam do siebie od czasu do czasu, ale nigdy gdy coś innego już wisi na ekranie
+  G.idleTalkT -= dt;
+  if (G.idleTalkT <= 0){
+    if (!G.workerSay && !G.bossReplyT && !G.boss){
+      const idleLines = ['Ale mi się nie chce...', 'A może tak L4?', 'Zajebisty mam kask, od Dyrektora Sławomira!'];
+      G.workerSay = { text: idleLines[Math.floor(Math.random() * idleLines.length)], t: 3 };
+    }
+    G.idleTalkT = 25 + Math.random() * 20;
+  }
+
+  if (G.guestCd > 0) G.guestCd -= dt;
+  if (G.guest) updateGuest(dt);
+
+  updateBoss(dt);
+  updateParis(dt);
+
+  // efficiency gauge: slowly sags unless you keep working
+  G.perfT = Math.max(PERF_MIN, G.perfT - 2.5 * dt);
+  // needle drops faster than it climbs
+  G.perfV += (G.perfT - G.perfV) * Math.min(1, dt * (G.perfT < G.perfV ? 5 : 2.5));
+  // raportowe OEE zmiany: próbka raz na sekundę, potem zwykła średnia arytmetyczna
+  G.perfSampleT += dt;
+  if (G.perfSampleT >= 1){ G.perfSampleT -= 1; G.perfSum += G.perfT; G.perfN++; }
+
+  // last life: the slim bald guy walks in and states the obvious
+  if (G.pizda){
+    const Z = G.pizda; Z.t += dt;
+    if (Z.state === 'enter'){ Z.x += 170 * dt; if (Z.x >= 480){ Z.x = 480; Z.state = 'talk'; Z.t = 0; beep(220,.5,'triangle',.06,-110); } }
+    else if (Z.state === 'talk'){ if (Z.t > 4){ Z.state = 'leave'; Z.t = 0; } }
+    else { Z.x -= 170 * dt; if (Z.x < -40) G.pizda = null; }
+  }
+
+  // particles & popups
+  for (const q of G.parts){ q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.life -= dt;
+    if (q.y > FLOOR + 6){ q.y = FLOOR + 6; q.vy *= -0.3; q.vx *= 0.7; } }
+  G.parts = G.parts.filter(q => q.life > 0);
+  for (const o of G.pops) o.t += dt;
+  G.pops = G.pops.filter(o => o.t < 1.2);
+  G.shake = Math.max(0, G.shake - dt * 30);
+}
+
+// wspólna logika "jeden karton trafia do auta" — używana zarówno przy zwykłym rozładunku, jak i przy trafionym rzucie
+function loadOne(type, sx, topY){
+  const T = G.truck, d = TYPES[type];
+  const idx = []; for (let i = 0; i < d.u && T.units < T.cap; i++) idx.push(T.units++);
+  const pts = Math.round(d.pts * mult());
+  G.score += pts; perf(3);
+  G.fly.push({ type, sx, sy: topY - d.h, idx, t: 0 });
+  pop('+' + pts, sx + 10, topY - 20, '#ffcc1a', 20);
+  sfx.load();
+  if (T.units >= T.cap){
+    T.state = 'closing'; T.delay = 0.6;
+    const bonus = Math.ceil(T.time) * 10;
+    G.score += bonus; G.level++; G.trucksDone++; perf(15);
+    pop('JBB ZAŁADOWANE!  +' + bonus, 420, 180, '#ffcc1a', 32);
+    sfx.horn();
+  }
+}
+// rzut kartonem pod spację — w zasięgu zawsze trafia do auta, poza zasięgiem nic się nie dzieje (bez losowania, bez lotu w niebo)
+const THROW_RANGE = 260;
+function throwBox(){
+  const p = G.player, T = G.truck;
+  if (!p.stack.length || p.throwCd > 0) return;
+  p.throwCd = 0.3;
+  const dist = Math.abs(DOCK_X - p.x);
+  const canScore = T.state === 'parked' && T.units < T.cap && dist <= THROW_RANGE;
+  if (!canScore){ pop('Za daleko!', p.x, stackTop() - 18, '#ff7a1a', 18); return; }
+  const type = p.stack.pop();
+  const topY = stackTop();
+  sfx.toss();
+  loadOne(type, p.x, topY);
+}
+function catchBox(b, cx, top){
+  const p = G.player, d = TYPES[b.type];
+  if (b.type === 'pallet'){
+    b.dead = true; p.stun = 0.9; G.combo = 0; G.shake = 8; sfx.bonk(); perf(-8);
+    burst(b.x, top, '#8a6a3f', 10);
+    pop('AUĆ!', b.x, top - 16, '#ff7a1a', 26);
+    if (p.stack.length){
+      const t = p.stack.pop(), td = TYPES[t];
+      G.boxes.push({ type:t, x:cx, y:stackTop() - td.h, w:td.w, h:td.h, vx:(Math.random() < .5 ? -1 : 1) * 150, vy:-220, rot:0, vr:4, bounced:true });
+    }
+    // po uderzeniu w głowę czasem wpada pani z BHP i chwali kask
+    if (!G.guest && G.guestCd <= 0){
+      G.guest = { x: W + 40, target: Math.max(60, Math.min(P_MAX_X, b.x)), state:'enter', t:0, walk:0 };
+      G.guestCd = 30 + Math.random() * 15;
+    }
+    return;
+  }
+  if (b.type === 'coffee'){ b.dead = true; perf(3); p.boost = 7; p.boostLabel = 'KAWA'; sfx.power(); pop('KAWA! szybciej', b.x, top - 16, '#ffe2a8'); return; }
+  if (b.type === 'medkit'){ b.dead = true; perf(3); G.strikes = Math.max(0, G.strikes - 1); sfx.power(); pop('−1 reklamacja', b.x, top - 16, '#7fd18b'); return; }
+  if (units() + d.u > MAX_UNITS){
+    const again = b.bounced;
+    b.bounced = true; b.vy = -240; b.vx = (b.x < cx ? -1 : 1) * 150; b.vr = 5; sfx.bounce();
+    if (!again){ perf(-5); pop('Pełne ręce!', cx, top - 18, '#ff7a1a'); }
+    return;
+  }
+  b.dead = true; p.stack.push(b.type); G.combo++; sfx.catch(); perf(4);
+  if (b.type === 'heavy' && !G.saidHeavy){ G.saidHeavy = true; G.workerSay = { text: 'Ciężkie w chuj!', t: 2.2 }; }
+  if (G.combo > 0 && G.combo % 6 === 0) pop('Seria ×' + mult().toFixed(1), cx, top - 30, '#ffcc1a', 24);
+}
+
+function land(b){
+  b.dead = true;
+  const d = TYPES[b.type];
+  if (d.hazard){ burst(b.x, FLOOR, '#6b5a50', 6); return; }
+  if (d.power){ burst(b.x, FLOOR, '#cfd6de', 5); return; }
+  burst(b.x, FLOOR - 4, b.type === 'fragile' ? '#cfe8ff' : b.type === 'zero' ? '#5e9446' : '#b98550', b.type === 'fragile' ? 22 : 14);
+  G.combo = 0;
+  sfx.crash(); perf(-18);
+  addStrike(b.type === 'fragile' ? 'Stłuczka! Reklamacja' : 'Reklamacja!', b.x, FLOOR - 50);
+}
+
+function addStrike(text, x, y){
+  G.strikes++; G.shake = 10;
+  pop(text, x, y, '#ff5a4a', 26);  if (G.strikes >= MAX_STRIKES) gameOver();
+}
+
+function gameOver(){
+  if (G.over) return;
+  // outro: the athletic guy sprints to the middle and sums up the shift
+  G.over = true; G.outroDone = false; sfx.over();
+  G.pizda = { x:-30, state:'enter', t:0, fast:true };
+  G.paris = null;
+  keys.left = keys.right = false;
+}
+function updateOutro(dt){
+  G.t += dt;
+  const Z = G.pizda; Z.t += dt;
+  if (Z.state === 'enter'){
+    Z.x += 600 * dt;
+    if (Z.x >= 480){ Z.x = 480; Z.state = 'talk'; Z.t = 0; G.shake = 6; beep(220,.6,'triangle',.07,-120); }
+  } else if (Z.t > 2.8 && !G.outroDone){ G.outroDone = true; showGameOver(); }
+  for (const q of G.parts){ q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; }
+  G.parts = G.parts.filter(q => q.life > 0);
+  for (const o of G.pops) o.t += dt;
+  G.pops = G.pops.filter(o => o.t < 1.2);
+  G.shake = Math.max(0, G.shake - dt * 30);
+}
+function showGameOver(){
+  running = false;
+  const best = Math.max(G.best, G.score);
+  const isRec = G.score > G.best;
+  const avgOEE = Math.round(G.perfN > 0 ? G.perfSum / G.perfN : G.perfT);
+  const happy = avgOEE > 45;
+  saveBest(best); bestLbl.textContent = 'Rekord: ' + best;
+  card.innerHTML = `
+    <span class="stamp">${isRec ? 'NOWY REKORD' : 'KONIEC ZMIANY'}</span>
+    <h2>${G.score} pkt</h2>
+    <div class="oeeReport">
+      <canvas id="oeeGauge" aria-hidden="true"></canvas>
+      <p class="oeeReportText">Wysłane auta: <b>${G.trucksDone}</b> · rekord: <b>${best}</b><br>Średnie OEE zmiany: <b>${avgOEE}%</b><br>${happy ? 'Załoga w euforii — plan zrobiony!' : 'Kierownik zmiany prosi o raport do rana.'}</p>
+    </div>
+    <button id="startBtn" type="button">Jeszcze jedna zmiana</button>`;
+  const gc = document.getElementById('oeeGauge');
+  if (gc){
+    // ten sam rozmiar wskaźnika co w grze (r=44), ostry na ekranach HiDPI
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), cw = 132, ch = 108;
+    gc.style.width = cw + 'px'; gc.style.height = ch + 'px';
+    gc.width = Math.round(cw * dpr); gc.height = Math.round(ch * dpr);
+    const gctx = gc.getContext('2d');
+    gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawGaugeFace(gctx, 66, 60, 44, avgOEE);
+  }
+  bindStart();
+  ovl.hidden = false; ovl.classList.add('ending');
+  G.mood = happy ? 'happy' : 'sad'; G.moodT = 0; G.moodPop = 0;
+  // „zdjęcie” na koniec zmiany: prezes + Adrian po lewej, robotnik + kierowca po prawej — środek wolny na wynik
+  G.player.x = 760; G.player.vx = 0; G.player.stack = [];
+  G.pizda.x = 170;
+  if (G.boss){ G.boss.x = 70; G.boss.target = 70; if (G.boss.state !== 'shout') G.boss.state = 'enter'; }
+  else G.boss = { x:70, target:70, state:'enter', t:0, walk:0, line:0, thrown:true, text:'' };
+  G.finaleCaller = { x:860, t:5 };
+  endRunning = true; lastEndT = performance.now(); requestAnimationFrame(endFrame);
+  draw();
+}
+
+/* ---------- prezes ---------- */
+const BOSS_LINES = ['JAZDA Z KURWAMI!', 'SZYBCIEJ!', 'JA WSZYSTKO WIDZĘ!','TYLKO NIE SKACZ PO PALETACH!', 'ALE PIERDOLNIK NA MAGAZYNIE!', 'KTO MI ZEPSUJE STATYSTYKI, TEN SPRZĄTA PARKING!', 'JESZCZE JEDEN BUBEL I ROBISZ INWENTARYZACJĘ SOLO!', 'ZEPSUJESZ WÓZEK, PCHASZ GO RĘCZNIE DO ŁYSYCH!', 'KTO SIĘ SPÓŹNI NA PRZERWĘ, TEN JEJ NIE MA!'];
+// riposty robotnika, 3 s po wybranych tekstach prezesa
+const BOSS_REPLIES = {
+  'SZYBCIEJ!': "Ja mam Corsę, nie RS'a...",
+  'JAZDA Z KURWAMI!': 'Za 200 to sam sobie jedź...',
+  'ALE PIERDOLNIK NA MAGAZYNIE!': 'To wsiadaj na wózek!',
+  'JA WSZYSTKO WIDZĘ!': 'A lepiej byś pomógł!',
+  'KTO MI ZEPSUJE STATYSTYKI, TEN SPRZĄTA PARKING!': 'Już lecę, ha ha!',
+};
+function pickBossLine(){
+  // one random line per visit, never the same one twice in a row
+  let i; do { i = Math.floor(Math.random() * BOSS_LINES.length); } while (BOSS_LINES.length > 1 && i === G.lastBossLine);
+  G.lastBossLine = i;
+  return BOSS_LINES[i];
+}
+/* ---------- wskaźnik OEE ---------- */
+const PERF_MIN = 0;
+function perf(d){ G.perfT = Math.min(100, Math.max(PERF_MIN, G.perfT + d)); }
+/* ---------- Paris: brązowy pudel, który raz na jakiś czas spada przez lukę i kasuje wszystkie reklamacje ---------- */
+function updateParis(dt){
+  const p = G.player;
+  if (!G.paris){
+    G.parisT -= dt;
+    if (G.parisT <= 0){
+      // pojawia się tylko wtedy, gdy jest co kasować
+      if (G.strikes > 0 && !G.pizda){
+        const x = 190 + Math.random() * 350;
+        G.paris = { state:'tele', x, y:30, vy:0, t:1.4, rot:0, face: Math.random() < .5 ? -1 : 1, walk:0, life:0, say:0 };
+        beep(1200, .06, 'triangle', .04); setTimeout(() => beep(1500, .08, 'triangle', .04), 90);
+        G.parisT = 45 + Math.random() * 25;
+      } else G.parisT = 5;
+    }
+    return;
+  }
+  const P = G.paris;
+  if (P.say > 0) P.say -= dt;
+  const touching = () => Math.abs(P.x - p.x) < 42;
+  if (P.state === 'tele'){
+    P.t -= dt;
+    if (P.t <= 0){ P.state = 'fall'; P.vy = 20; P.y = 60; P.say = 1.4; sfx.bark(); }
+  } else if (P.state === 'fall'){
+    P.vy = Math.min(150, P.vy + 110 * dt);
+    P.y += P.vy * dt; P.rot = Math.sin(G.t * 9) * 0.35;
+    if (P.y >= stackTop() && touching()) catchParis();
+    else if (P.y >= FLOOR){ P.y = FLOOR; P.rot = 0; P.state = 'ground'; P.life = 7; P.say = 1.2; sfx.bark(); burst(P.x, FLOOR, '#8a5530', 6); }
+  } else if (P.state === 'ground'){
+    P.life -= dt; P.face = p.x >= P.x ? 1 : -1;
+    if (touching()) catchParis();
+    else if (P.life <= 0){ P.state = 'leave'; P.face = -1; }
+  } else if (P.state === 'happy'){
+    P.t += dt; P.face = p.x >= P.x ? 1 : -1;
+    if (P.t > 1.6){ P.state = 'leave'; P.face = -1; }
+  } else if (P.state === 'leave'){
+    P.x += P.face * 280 * dt; P.walk += dt * 18;
+    if (P.x < -50 || P.x > W + 50) G.paris = null;
+  }
+}
+function catchParis(){
+  const P = G.paris;
+  P.state = 'happy'; P.t = 0; P.rot = 0; P.y = FLOOR; P.say = 1.6;
+  // odskakuje obok robotnika, żeby się nie nakładali
+  const px = G.player.x; P.x = px < 120 ? px + 36 : px - 36;
+  const n = G.strikes; G.strikes = 0;
+  perf(10); sfx.power(); sfx.bark();
+  burst(P.x, FLOOR - 50, '#ff8fb8', 18); burst(P.x, FLOOR - 50, '#8a5530', 8);
+  pop(n ? 'PARIS! Reklamacje skasowane' : 'PARIS!', Math.max(160, Math.min(W - 160, P.x)), FLOOR - 130, '#ff8fb8', 26);
+}
+function drawParisHatch(P){
+  const on = Math.floor(P.t * 12) % 2 === 0;
+  ctx.fillStyle = on ? '#ff8fb8' : '#7a3a55';
+  ctx.fillRect(P.x - 18, 24, 36, 6);
+  ctx.fillStyle = on ? 'rgba(255,143,184,.2)' : 'rgba(255,143,184,.06)';
+  ctx.beginPath(); ctx.moveTo(P.x-18, 30); ctx.lineTo(P.x+18, 30); ctx.lineTo(P.x+34, 84); ctx.lineTo(P.x-34, 84); ctx.fill();
+  ctx.fillStyle = '#ff8fb8'; ctx.font = `700 16px ${HUD_FONT}`; ctx.textAlign = 'center'; ctx.fillText('♥', P.x, 50);
+}
+function drawParis(P){
+  if (P.state === 'tele'){ drawParisHatch(P); return; }
+  if (P.state === 'ground' && P.life < 2 && Math.floor(P.life * 8) % 2) return;
+  const falling = P.state === 'fall', running = P.state === 'leave', sitting = P.state === 'ground';
+  const hop = P.state === 'happy' ? -Math.abs(Math.sin(P.t * 10)) * 14 : running ? -Math.abs(Math.sin(P.walk)) * 4 : 0;
+  // cień
+  const dist = FLOOR - P.y, a = Math.max(0.08, 0.35 - dist / 1200);
+  ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.beginPath(); ctx.ellipse(P.x, FLOOR + 2, 14 * (1 - dist / 1400), 4, 0, 0, Math.PI*2); ctx.fill();
+  // toy pudel w strzyżeniu „na misia”: rudobrązowe loki na całym ciele, okrągła głowa, puchate uszy
+  const DARK = '#6e3419', MID = '#9a4f2c', LIGHT = '#b8673c', HI = '#cf8456';
+  ctx.save(); ctx.translate(P.x, P.y + hop); ctx.rotate(P.rot); ctx.scale(P.face * 1.1, 1.1);
+  const puff = (x, y, r, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); };
+  const curly = (x, y, r, c, n = 7) => { puff(x, y, r, c); for (let i = 0; i < n; i++){ const an = i * Math.PI * 2 / n + x * .3; puff(x + Math.cos(an) * r * .75, y + Math.sin(an) * r * .75, r * .42, c); } };
+  // łapy: krótkie, grube, całe w lokach
+  const legs = [[-9, 0, DARK], [5, 1, DARK], [-5, 2, MID], [9, 3, MID]];
+  for (const [lx, ph, c] of legs){
+    let fx = lx, fy = 0;
+    if (running) fx += Math.sin(P.walk + ph * 1.6) * 4;
+    if (falling){ fx += (lx < 0 ? -1 : 1) * 5; fy = -3 + Math.sin(G.t * 20 + ph) * 2.5; }
+    if (sitting && lx < 0){ fx = lx + 3; fy = -1; }
+    const mx = (lx + fx) / 2;
+    curly(mx, (fy - 13) / 2 - 3, 3.6, c, 5);
+    curly(fx, fy - 3, 3.6, c, 5);
+  }
+  // ogonek: mały kłębek, merda
+  const wag = Math.sin(G.t * (P.state === 'happy' || running ? 24 : 8)) * 3;
+  curly(-14 + wag * .3, (sitting ? -12 : -21) - Math.abs(wag) * .4, 4.2, MID, 6);
+  // tułów
+  curly(-6, sitting ? -11 : -15, 7.5, MID, 8);
+  curly(5, -16, 8, LIGHT, 8);
+  // głowa (duża, okrągła jak u misia)
+  const hx = 11, hy = -30;
+  curly(hx + 6, hy + 3, 5, DARK, 6);                                   // dalsze ucho
+  curly(hx, hy, 9, LIGHT, 9);
+  puff(hx - 2, hy - 3, 5, HI);                                         // jaśniejszy czubek
+  // pyszczek: krótki i puchaty
+  curly(hx + 7, hy + 4, 4.2, HI, 6);
+  puff(hx + 10.5, hy + 2.5, 1.8, '#1a0d06');                           // nos
+  puff(hx + 1.5, hy - 1, 1.5, '#1a0d06'); puff(hx + 6.5, hy - 1.2, 1.5, '#1a0d06');   // oczy
+  puff(hx + 2, hy - 1.5, .5, '#fff'); puff(hx + 7, hy - 1.7, .5, '#fff');
+  if (P.state === 'happy'){ ctx.fillStyle = '#e0507a'; ctx.beginPath(); ctx.ellipse(hx + 8, hy + 8.5, 1.6, 2.4, 0, 0, Math.PI*2); ctx.fill(); }
+  // bliższe ucho: długie, w lokach, w locie podrywa się do góry
+  ctx.save(); ctx.translate(hx - 6, hy - 2); ctx.rotate(falling ? -2.2 : 0.12);
+  curly(0, 4, 4.2, MID, 6); curly(-.5, 9, 4.2, MID, 6); curly(0, 13, 3.6, MID, 6);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawGaugeFace(c, cx, cy, r, v){
+  const ang = a => Math.PI + (a / 100) * Math.PI;
+  c.save();
+  c.fillStyle = 'rgba(14,17,21,.82)'; c.beginPath();
+  if (c.roundRect) c.roundRect(cx - 62, cy - 58, 124, 94, 6); else c.rect(cx - 62, cy - 58, 124, 94);
+  c.fill();
+  c.lineWidth = 8; c.lineCap = 'butt';
+  for (const [a, b, col] of [[0, 50, '#c9412f'], [50, 80, '#e0b12a'], [80, 100, '#3c9a55']]){
+    c.strokeStyle = col; c.beginPath(); c.arc(cx, cy, r, ang(a), ang(b)); c.stroke();
+  }
+  c.strokeStyle = '#c9d0d7'; c.lineWidth = 1.5;
+  for (let t = 0; t <= 100; t += 10){
+    const a = ang(t), r1 = r - 7, r2 = t % 50 ? r - 12 : r - 15;
+    c.beginPath(); c.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); c.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2); c.stroke();
+  }
+  c.fillStyle = '#9aa1a9'; c.font = `700 10px ${HUD_FONT}`; c.textAlign = 'center';
+  c.fillText('0', cx - r + 4, cy + 12); c.fillText('100', cx + r - 6, cy + 12);
+  // needle
+  const a = ang(v);
+  c.strokeStyle = '#f4f1ec'; c.lineWidth = 2.5; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(cx - Math.cos(a) * 6, cy - Math.sin(a) * 6); c.lineTo(cx + Math.cos(a) * (r - 6), cy + Math.sin(a) * (r - 6)); c.stroke();
+  c.fillStyle = '#f4f1ec'; c.beginPath(); c.arc(cx, cy, 4, 0, Math.PI * 2); c.fill();
+  // readout
+  const col = v >= 80 ? '#7fe08f' : v >= 50 ? '#ffcc1a' : '#ff5a4a';
+  c.fillStyle = col; c.font = `20px ${STENCIL}`; c.fillText(Math.round(v) + '%', cx, cy + 22);
+  c.fillStyle = '#9aa1a9'; c.font = `700 11px ${HUD_FONT}`; c.fillText('OEE', cx, cy + 33);
+  c.restore();
+}
+function drawGauge(){
+  // needle never sits still: two slow waves + a little tremble
+  let v = G.perfV + Math.sin(G.t * 2.3) * 2.2 + Math.sin(G.t * 7.1) * 1.2 + (Math.random() - .5) * 0.8;
+  v = Math.min(100, Math.max(PERF_MIN, v));
+  drawGaugeFace(ctx, 888, 108, 44, v);
+}
+
+/* ---------- pani z BHP: "dobrze, że miałeś kask!" ---------- */
+function updateGuest(dt){
+  const Gw = G.guest;
+  Gw.t += dt;
+  if (Gw.state === 'enter'){
+    Gw.walk += dt * 8;
+    Gw.x += (Gw.target - Gw.x >= 0 ? 1 : -1) * 130 * dt;
+    if (Math.abs(Gw.x - Gw.target) < 4){ Gw.x = Gw.target; Gw.state = 'talk'; Gw.t = 0; }
+  } else if (Gw.state === 'talk'){
+    // po 3 s robotnik odpowiada, a pani z BHP chwilę słucha i dopiero wychodzi
+    if (Gw.t > 3 && !Gw.replied){ Gw.replied = true; G.workerSay = { text: 'Dostałem od Sławka!', t: 2.5 }; }
+    if (Gw.t > 5.3){ Gw.state = 'leave'; Gw.t = 0; }
+  } else {
+    Gw.walk += dt * 8;
+    Gw.x += 130 * dt;
+    if (Gw.x > W + 60) G.guest = null;
+  }
+}
+function updateBoss(dt){
+  const p = G.player;
+  if (!G.boss){
+    G.bossT -= dt;
+    if (G.bossT <= 0){
+      G.boss = { x:-40, target: 10 + Math.random() * 70, state:'enter', t:0, walk:0, line:0, thrown:false, text: pickBossLine() };
+      G.bossT = 22 + Math.random() * 14;
+    }
+  } else {
+    const B = G.boss;
+    B.t += dt;
+    if (B.state === 'enter'){
+      B.x += 110 * dt; B.walk += dt * 9;
+      if (B.x >= B.target){
+        B.x = B.target; B.state = 'shout'; B.t = 0; sfx.yell();
+        if (BOSS_REPLIES[B.text]){ G.bossReplyT = 3; G.bossReplyText = BOSS_REPLIES[B.text]; }
+      }
+    } else if (B.state === 'shout'){
+      const li = Math.floor(B.t / 1.1);
+      if (li !== B.line){ B.line = li; sfx.yell(); }
+      if (!B.thrown && B.t > 1.3){ B.thrown = true; throwNote(B); }
+      if (B.t > 3.6){ B.state = 'leave'; B.t = 0; }
+    } else {
+      B.x -= 130 * dt; B.walk += dt * 10;
+      if (B.x < -60) G.boss = null;
+    }
+  }
+  // banknotes: thrown straight up, land randomly — catchable only on the way down, like a bounced box
+  for (const n of G.notes){
+    n.vy += 300 * dt;
+    n.vx *= Math.max(0, 1 - dt * 1.2);
+    n.x += n.vx * dt; n.y += n.vy * dt; n.r += dt * 9;
+    if (n.x < 10 || n.x > P_MAX_X + 10){ n.vx *= -0.5; n.x = Math.max(10, Math.min(P_MAX_X + 10, n.x)); }
+    if (n.vy > 0 && Math.abs(n.x - p.x) < 30 && n.y > stackTop() - 14 && n.y < FLOOR){
+      n.dead = true;
+      p.boost = 12; p.boostLabel = 'DOPALACZ';
+      G.score += 200;
+      sfx.cash();
+      pop('DOPALACZ! +200', p.x, stackTop() - 26, '#7fe08f', 28);
+      for (let i = 0; i < 10; i++) G.parts.push({ x:p.x, y:FLOOR-60, vx:(Math.random()-.5)*260, vy:-Math.random()*240, r:0, vr:(Math.random()-.5)*10, s:6, c:'#8fd19e', life:.8 });
+    } else if (n.vy > 0 && n.y >= FLOOR - 4){ n.dead = true; pop('szkoda kasy…', n.x, FLOOR - 30, '#9aa1a9', 16); }
+  }
+  G.notes = G.notes.filter(n => !n.dead);
+  // odpowiedź robotnika 3 s po wybranych tekstach prezesa (BOSS_REPLIES)
+  if (G.bossReplyT != null){
+    G.bossReplyT -= dt;
+    if (G.bossReplyT <= 0){ G.bossReplyT = null; G.workerSay = { text: G.bossReplyText, t: 3 }; }
+  }
+}
+function throwNote(B){
+  const p = G.player, face = p.x >= B.x ? 1 : -1;
+  const sx = B.x + face * 16, sy = FLOOR - 92;
+  const vx = face * (130 + Math.random() * 190);
+  const vy = -(370 + Math.random() * 100);
+  G.notes.push({ x:sx, y:sy, vx, vy, r:0 });
+}
+function drawNote(n){
+  ctx.save(); ctx.translate(n.x, n.y); ctx.rotate(Math.sin(n.r) * 0.6); ctx.scale(1, 0.55 + Math.abs(Math.cos(n.r)) * 0.45);
+  ctx.fillStyle = '#6aa874'; ctx.fillRect(-17, -9, 34, 18);
+  ctx.strokeStyle = '#2f5e3a'; ctx.lineWidth = 1.5; ctx.strokeRect(-15, -7, 30, 14);
+  ctx.fillStyle = '#d8ecd9'; ctx.beginPath(); ctx.ellipse(-6, 0, 5, 6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1f3d27'; ctx.font = `700 9px ${HUD_FONT}`; ctx.textAlign = 'center'; ctx.fillText('200', 7, 3);
+  ctx.restore();
+}
+function drawBoss(B){
+  const shouting = B.state === 'shout';
+  const angry = G.mood === 'sad';
+  const skin = angry ? '#d9503f' : '#e8b08a', skinShade = angry ? '#b8382c' : '#d99a74';
+  const face = G.player.x >= B.x ? 1 : -1;
+  const hop = shouting ? -Math.abs(Math.sin(G.t * 18)) * 4 : 0;
+  const x = B.x, f = FLOOR + hop;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, FLOOR + 2, 22, 5, 0, 0, Math.PI*2); ctx.fill();
+  // legs
+  const la = shouting ? 0 : Math.sin(B.walk) * 0.45;
+  for (const s of [-1, 1]){
+    ctx.save(); ctx.translate(x + s*7, f - 24); ctx.rotate(la * s);
+    ctx.fillStyle = '#1f2a44'; ctx.fillRect(-5, 0, 10, 20);
+    ctx.fillStyle = '#0c0c0c'; ctx.fillRect(-6 + (face > 0 ? 1 : -4), 19, 14, 5);
+    ctx.restore();
+  }
+  // belly / jacket
+  ctx.fillStyle = '#26345a'; ctx.beginPath(); ctx.ellipse(x, f - 42, 20, 22, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#f2f2f2'; ctx.beginPath(); ctx.moveTo(x - 7, f - 62); ctx.lineTo(x + 7, f - 62); ctx.lineTo(x, f - 36); ctx.fill();
+  ctx.fillStyle = '#d0262d'; ctx.beginPath(); ctx.moveTo(x - 2.5, f - 60); ctx.lineTo(x + 2.5, f - 60); ctx.lineTo(x + 3.5, f - 40); ctx.lineTo(x, f - 36); ctx.lineTo(x - 3.5, f - 40); ctx.fill();
+  ctx.fillStyle = '#ffcc1a'; ctx.fillRect(x - 17, f - 52, 5, 3);   // pocket pen
+  // arms: one shaking fist up when shouting, other on hip
+  ctx.strokeStyle = '#26345a'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath();
+  const shake = Math.sin(G.t * 30) * 4;
+  const ax = x + face * 16;
+  if (shouting){ ctx.moveTo(ax, f - 56); ctx.lineTo(ax + face * 8, f - 72); ctx.lineTo(ax + face * 4 + shake, f - 88); }
+  else { ctx.moveTo(ax, f - 56); ctx.lineTo(ax + face * 5, f - 40); ctx.lineTo(ax + face * 2, f - 28); }
+  ctx.moveTo(x - face * 16, f - 56); ctx.lineTo(x - face * 26, f - 46); ctx.lineTo(x - face * 18, f - 38);
+  ctx.stroke();
+  ctx.fillStyle = skin; ctx.beginPath();
+  if (shouting) ctx.arc(ax + face * 4 + shake, f - 90, 5, 0, Math.PI*2); else ctx.arc(ax + face * 2, f - 26, 4.5, 0, Math.PI*2);
+  ctx.fill();
+  // head (big, cartoon)
+  const hx = x + face * 2, hy = f - 78;
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(hx, hy, 14, 15, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = skinShade; ctx.beginPath(); ctx.arc(hx - face * 14, hy + 1, 4, 0, Math.PI*2); ctx.fill();   // ear
+  // comb-over: side parting, swept across the top — brown hair
+  ctx.fillStyle = '#6b4226';
+  ctx.beginPath();
+  ctx.moveTo(hx - face * 15, hy + 2);
+  ctx.quadraticCurveTo(hx - face * 16, hy - 17, hx + face * 2, hy - 17);
+  ctx.quadraticCurveTo(hx + face * 16, hy - 16, hx + face * 17, hy - 6);
+  ctx.quadraticCurveTo(hx + face * 8, hy - 12, hx - face * 7, hy - 10);
+  ctx.quadraticCurveTo(hx - face * 11, hy - 6, hx - face * 12, hy + 2);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#9c7a4e'; ctx.lineWidth = 1.2; ctx.beginPath();
+  ctx.moveTo(hx - face * 10, hy - 14); ctx.quadraticCurveTo(hx - face * 4, hy - 15, hx - face * 1, hy - 16); ctx.stroke();   // parting
+  // glasses
+  const ey = hy - 2, e1 = hx + face * 2, e2 = hx + face * 11;
+  ctx.fillStyle = 'rgba(210,235,255,.55)';
+  ctx.beginPath(); ctx.arc(e1, ey, 5.5, 0, Math.PI*2); ctx.arc(e2, ey, 5, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(e1, ey, 5.5, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(e2, ey, 5, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(e1 + face * 5.5, ey); ctx.lineTo(e2 - face * 5, ey); ctx.moveTo(e1 - face * 5.5, ey); ctx.lineTo(hx - face * 12, ey - 1); ctx.stroke();
+  ctx.fillStyle = '#111'; ctx.fillRect(e1 - 1, ey - 1, 2.5, 2.5); ctx.fillRect(e2 - 1, ey - 1, 2.5, 2.5);
+  // angry brows
+  ctx.strokeStyle = '#2b2119'; ctx.lineWidth = 2; ctx.beginPath();
+  ctx.moveTo(e1 - 5, ey - 10 + (face > 0 ? 0 : 3)); ctx.lineTo(e1 + 4, ey - 8 + (face > 0 ? 2 : -1));
+  ctx.moveTo(e2 - 4, ey - 8 + (face > 0 ? 2 : -1)); ctx.lineTo(e2 + 5, ey - 10 + (face > 0 ? 3 : 0)); ctx.stroke();
+  // mouth
+  if (shouting){
+    const open = 3 + Math.abs(Math.sin(G.t * 16)) * 4;
+    ctx.fillStyle = '#6e1a1a'; ctx.beginPath(); ctx.ellipse(hx + face * 7, hy + 8, 4.5, open, 0, 0, Math.PI*2); ctx.fill();
+  } else {
+    ctx.strokeStyle = '#6e3a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + face * 3, hy + 8); ctx.lineTo(hx + face * 10, hy + 7); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawBossBubble(B){
+  if (B.state !== 'shout') return;
+  drawBubble(B.text || BOSS_LINES[0], B.x, FLOOR - 160, '#d0262d', 3);
+}
+function drawBubble(text, ax, by, color, jitter){
+  ctx.save();
+  ctx.font = `22px ${STENCIL}`;
+  const w = ctx.measureText(text).width + 24, h = 36;
+  const jx = (Math.random() - .5) * jitter, jy = (Math.random() - .5) * jitter;
+  const bx = Math.min(Math.max(8, ax - 20), W - w - 8) + jx;
+  by += jy;
+  ctx.fillStyle = '#fff'; rr(bx, by, w, h, 8); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(ax - 6, by + h - 1); ctx.lineTo(ax + 6, by + h - 1); ctx.lineTo(ax, by + h + 16); ctx.fill();
+  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, bx + w / 2, by + h / 2 + 1);
+  ctx.restore();
+}
+
+/* ---------- łysy, szczupły, wysportowany: ostatnie życie ---------- */
+function drawPizda(Z){
+  const talking = Z.state === 'talk';
+  const face = Z.state === 'leave' ? -1 : 1;
+  const stride = Z.fast ? 26 : 11;
+  const x = Z.x, f = FLOOR, la = talking ? 0 : Math.sin(Z.t * stride) * (Z.fast ? 0.8 : 0.5);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f + 2, 16, 4, 0, 0, Math.PI*2); ctx.fill();
+  // long legs, jeans + sneakers
+  for (const s of [-1, 1]){
+    ctx.save(); ctx.translate(x + s*5, f - 38); ctx.rotate(la * s);
+    ctx.fillStyle = '#3d5a86'; ctx.fillRect(-4, 0, 8, 34);
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(1.5, 0, 1, 34);   // seam
+    ctx.fillStyle = '#2c4468'; ctx.fillRect(-4, 30, 8, 3);                 // rolled hem
+    ctx.fillStyle = '#e8e8e8'; ctx.fillRect(-6 + (face > 0 ? 1 : -3), 32, 12, 6);
+    ctx.restore();
+  }
+  // V-shaped athletic torso, tight tee
+  ctx.fillStyle = '#e9ecef';
+  ctx.beginPath(); ctx.moveTo(x - 15, f - 74); ctx.lineTo(x + 15, f - 74); ctx.lineTo(x + 8, f - 38); ctx.lineTo(x - 8, f - 38); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 1; ctx.beginPath();
+  ctx.moveTo(x, f - 70); ctx.lineTo(x, f - 58); ctx.moveTo(x - 9, f - 62); ctx.quadraticCurveTo(x - 4, f - 58, x, f - 60); ctx.moveTo(x + 9, f - 62); ctx.quadraticCurveTo(x + 4, f - 58, x, f - 60); ctx.stroke();
+  // arms: shrug with palms up while talking, swinging while walking
+  const skin = '#d9a07a';
+  ctx.strokeStyle = skin; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
+  if (talking){
+    const sh = Math.sin(Z.t * 3) * 2;
+    ctx.moveTo(x - 14, f - 71); ctx.lineTo(x - 22, f - 56); ctx.lineTo(x - 34, f - 60 + sh);
+    ctx.moveTo(x + 14, f - 71); ctx.lineTo(x + 22, f - 56); ctx.lineTo(x + 34, f - 60 + sh);
+  } else {
+    const a = Math.sin(Z.t * stride) * (Z.fast ? 12 : 7);
+    ctx.moveTo(x - 14, f - 71); ctx.lineTo(x - 17 + a * .3, f - 56); ctx.lineTo(x - 15 + a, f - 44);
+    ctx.moveTo(x + 14, f - 71); ctx.lineTo(x + 17 - a * .3, f - 56); ctx.lineTo(x + 15 - a, f - 44);
+  }
+  ctx.stroke();
+  // biceps bumps
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x - 18, f - 64, 4, 0, Math.PI*2); ctx.arc(x + 18, f - 64, 4, 0, Math.PI*2); ctx.fill();
+  // tee sleeves
+  ctx.fillStyle = '#e9ecef'; ctx.fillRect(x - 20, f - 75, 8, 6); ctx.fillRect(x + 12, f - 75, 8, 6);
+  // neck + bald head
+  ctx.fillStyle = skin; ctx.fillRect(x - 3, f - 80, 6, 7);
+  const hx = x + face, hy = f - 88;
+  ctx.beginPath(); ctx.ellipse(hx, hy, 9, 10.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.ellipse(hx - face * 2, hy - 7, 3.5, 1.8, -0.3 * face, 0, Math.PI*2); ctx.fill();
+  // full beard along the jaw
+  ctx.fillStyle = '#4a3326'; ctx.beginPath();
+  ctx.moveTo(hx - face * 8, hy + 1);
+  ctx.quadraticCurveTo(hx - face * 7, hy + 14, hx + face * 3, hy + 15);
+  ctx.quadraticCurveTo(hx + face * 10, hy + 13, hx + face * 9, hy + 2);
+  ctx.lineTo(hx + face * 7, hy + 3); ctx.quadraticCurveTo(hx + face * 3, hy + 2, hx - face * 1, hy + 3);
+  ctx.closePath(); ctx.fill();
+  // face: resigned look
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(hx + face * 3 - 1, hy - 2, 2.5, 1.5); ctx.fillRect(hx + face * 7 - 1, hy - 2, 2, 1.5);
+  ctx.strokeStyle = '#3a2b20'; ctx.lineWidth = 1.5; ctx.beginPath();
+  ctx.moveTo(hx + face * 1, hy - 6); ctx.lineTo(hx + face * 5, hy - 5); ctx.moveTo(hx + face * 6, hy - 5); ctx.lineTo(hx + face * 9, hy - 6); ctx.stroke();
+  // złote okulary: dwie oprawki, mostek i zausznik biegnący do ucha
+  const g1 = hx + face * 3.3, g2 = hx + face * 7.6, gy = hy - 1.3;
+  ctx.fillStyle = 'rgba(200,225,240,.22)';
+  ctx.beginPath(); ctx.ellipse(g1, gy, 2.9, 2.4, 0, 0, Math.PI*2); ctx.ellipse(g2, gy, 2.3, 2.4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#d4a52a'; ctx.lineWidth = 1.1; ctx.beginPath();
+  ctx.ellipse(g1, gy, 2.9, 2.4, 0, 0, Math.PI*2);
+  ctx.moveTo(g2 + 2.3, gy); ctx.ellipse(g2, gy, 2.3, 2.4, 0, 0, Math.PI*2);
+  ctx.moveTo(g1 + face * 2.9, gy - .6); ctx.lineTo(g2 - face * 2.3, gy - .6);
+  ctx.moveTo(g1 - face * 2.9, gy - .4); ctx.lineTo(hx - face * 6, gy - 1);
+  ctx.stroke();
+  ctx.fillStyle = '#ffe28a'; ctx.fillRect(g1 - 1.5, gy - 2.6, 1.2, .8);
+  ctx.strokeStyle = '#6e3a2a'; ctx.lineWidth = 1.8; ctx.beginPath();
+  if (talking){ const o = Math.abs(Math.sin(Z.t * 12)) * 2; ctx.ellipse(hx + face * 5, hy + 5, 2.5, 0.6 + o, 0, 0, Math.PI*2); }
+  else { ctx.moveTo(hx + face * 2, hy + 5); ctx.lineTo(hx + face * 8, hy + 5); }
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------- kierowca JBB z telefonem ---------- */
+function drawCaller(c){
+  const x = c.x, f = FLOOR, walking = c.x > 914.5;
+  const la = walking ? Math.sin(c.t * 10) * 0.45 : 0;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f + 2, 18, 4, 0, 0, Math.PI*2); ctx.fill();
+  for (const s of [-1, 1]){
+    ctx.save(); ctx.translate(x + s*6, f - 32); ctx.rotate(la * s);
+    ctx.fillStyle = '#34507a'; ctx.fillRect(-5, 0, 10, 28);               // jeans
+    ctx.fillStyle = '#e8e8e8'; ctx.fillRect(-8, 26, 13, 6);                 // sneakers
+    ctx.restore();
+  }
+  // polo shirt stretched over a belly
+  ctx.fillStyle = '#2f3a48'; rr(x - 13, f - 62, 26, 32, 4); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x - 5, f - 42, 15, 14, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.beginPath(); ctx.ellipse(x - 9, f - 46, 7, 6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#20262f'; ctx.fillRect(x - 13, f - 33, 24, 3);   // belt under the belly
+  ctx.fillStyle = JBB_RED; ctx.font = `800 7px Montserrat, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.fillText('JBB', x + 3, f - 54);
+  // free arm gesturing
+  ctx.strokeStyle = '#2f3a48'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath();
+  const g =Math.sin(c.t * 7) * 6;
+  ctx.moveTo(x - 12, f - 58); ctx.lineTo(x - 22, f - 48 + g * .4); ctx.lineTo(x - 28, f - 58 + g);
+  // phone arm up to the ear
+  ctx.moveTo(x + 11, f - 58); ctx.lineTo(x + 16, f - 66); ctx.lineTo(x + 8, f - 73);
+  ctx.stroke();
+  ctx.fillStyle = '#e0a47a'; ctx.beginPath(); ctx.arc(x - 28, f - 58 + g, 4, 0, Math.PI*2); ctx.fill();
+  // head
+  const hx = x - 1, hy = f - 72;
+  ctx.fillStyle = '#e0a47a'; ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI*2); ctx.fill();
+  // bald head with a shine
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(hx - 2, hy - 7, 4, 2, -0.3, 0, Math.PI*2); ctx.fill();
+  // face (looking left, towards the dock)
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(hx - 6, hy - 2, 2, 3);
+  const talk = Math.abs(Math.sin(c.t * 14)) * 2.5;
+  ctx.fillStyle = '#6e1a1a'; ctx.beginPath(); ctx.ellipse(hx - 5, hy + 5, 2.5, 0.8 + talk, 0, 0, Math.PI*2); ctx.fill();
+  // phone at the ear
+  ctx.fillStyle = '#111'; rr(hx + 5, hy - 7, 5, 13, 1.5); ctx.fill();
+  ctx.fillStyle = '#6fb6ff'; ctx.fillRect(hx + 6, hy - 5, 3, 3);
+  ctx.fillStyle = '#e0a47a'; ctx.beginPath(); ctx.arc(hx + 9, hy + 2, 3.5, 0, Math.PI*2); ctx.fill();
+  // ring waves while walking in
+  if (c.t < 2){
+    ctx.strokeStyle = 'rgba(111,182,255,.8)'; ctx.lineWidth = 1.5;
+    for (let i = 1; i <= 2; i++){ ctx.beginPath(); ctx.arc(hx + 8, hy - 2, 6 + i * 5 + (c.t * 20 % 5), -0.8, 0.8); ctx.stroke(); }
+  }
+  ctx.restore();
+}
+// wersja tylko na scenę końcową: stoi przodem, bez telefonu w ręce
+function drawCallerFront(c){
+  const x = c.x, f = FLOOR;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f + 2, 18, 4, 0, 0, Math.PI*2); ctx.fill();
+  for (const s of [-1, 1]){
+    ctx.fillStyle = '#34507a'; ctx.fillRect(x + s*6 - 5, f - 32, 10, 28);
+    ctx.fillStyle = '#e8e8e8'; ctx.fillRect(x + s*6 - 8, f - 6, 13, 6);
+  }
+  // polo shirt + belly, na wprost
+  ctx.fillStyle = '#2f3a48'; rr(x - 15, f - 62, 30, 32, 4); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, f - 42, 17, 14, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.beginPath(); ctx.ellipse(x - 6, f - 46, 7, 6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#20262f'; ctx.fillRect(x - 15, f - 33, 30, 3);
+  ctx.fillStyle = JBB_RED; ctx.font = `800 8px Montserrat, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.fillText('JBB', x, f - 52);
+  // obie ręce swobodnie, żadna nie trzyma telefonu
+  ctx.strokeStyle = '#2f3a48'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath();
+  ctx.moveTo(x - 14, f - 58); ctx.lineTo(x - 19, f - 44); ctx.lineTo(x - 17, f - 30);
+  ctx.moveTo(x + 14, f - 58); ctx.lineTo(x + 19, f - 44); ctx.lineTo(x + 17, f - 30);
+  ctx.stroke();
+  ctx.fillStyle = '#e0a47a'; ctx.beginPath(); ctx.arc(x - 17, f - 28, 4, 0, Math.PI*2); ctx.arc(x + 17, f - 28, 4, 0, Math.PI*2); ctx.fill();
+  // głowa na wprost
+  const hy = f - 72;
+  ctx.fillStyle = '#e0a47a'; ctx.beginPath(); ctx.arc(x, hy, 10, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(x - 2, hy - 7, 4, 2, -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x - 6, hy - 2, 2, 3); ctx.fillRect(x + 4, hy - 2, 2, 3);
+  // uśmiech przy euforii, smutna mina przy złym wyniku
+  const sad = G.mood === 'sad';
+  if (sad){
+    ctx.strokeStyle = '#5a2a1f'; ctx.lineWidth = 1.4; ctx.beginPath();
+    ctx.moveTo(x - 6, hy - 5); ctx.lineTo(x - 2, hy - 3); ctx.moveTo(x + 6, hy - 5); ctx.lineTo(x + 2, hy - 3); ctx.stroke();
+    ctx.strokeStyle = '#6e3a2a'; ctx.lineWidth = 1.6; ctx.beginPath();
+    ctx.moveTo(x - 4, hy + 7); ctx.quadraticCurveTo(x, hy + 4, x + 4, hy + 7); ctx.stroke();
+  } else {
+    ctx.strokeStyle = '#6e3a2a'; ctx.lineWidth = 1.6; ctx.beginPath();
+    ctx.moveTo(x - 4, hy + 5); ctx.quadraticCurveTo(x, hy + 8, x + 4, hy + 5); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ---------- drawing ---------- */
+function rr(x, y, w, h, r){ ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,w,h,r) : ctx.rect(x,y,w,h); }
+
+function drawBox(type, cx, y, rot=0, alpha=1){
+  const d = TYPES[type], w = d.w, h = d.h;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(cx, y + h/2); ctx.rotate(rot); ctx.translate(-w/2, -h/2);
+  if (type === 'pallet'){
+    // drewniana paleta z żółto-czarną taśmą ostrzegawczą — dobrze czytelna, gdy wiruje w locie
+    ctx.fillStyle = '#a3814f'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    ctx.fillRect(0, h/3 - 1, w, 2); ctx.fillRect(0, h*2/3 - 1, w, 2);
+    ctx.strokeStyle = 'rgba(60,40,20,.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(2, h/6); ctx.lineTo(w-2, h/6+1); ctx.moveTo(2, h*5/6); ctx.lineTo(w-2, h*5/6-1); ctx.stroke();
+    const hazard = (yy) => {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, yy, w, 3); ctx.clip();
+      ctx.fillStyle = '#ffcc1a'; ctx.fillRect(0, yy, w, 3);
+      ctx.fillStyle = '#16181b';
+      for (let x = -6; x < w + 6; x += 7){ ctx.beginPath(); ctx.moveTo(x, yy+3); ctx.lineTo(x+3, yy+3); ctx.lineTo(x+6, yy); ctx.lineTo(x+3, yy); ctx.fill(); }
+      ctx.restore();
+    };
+    hazard(0); hazard(h - 3);
+    ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  } else if (type === 'coffee'){
+    ctx.fillStyle = '#f2efe8'; ctx.beginPath(); ctx.moveTo(1,6); ctx.lineTo(w-1,6); ctx.lineTo(w-4,h); ctx.lineTo(4,h); ctx.fill();
+    ctx.fillStyle = '#5a3a22'; ctx.fillRect(1,6,w-2,4);
+    ctx.fillStyle = '#c63'; ctx.fillRect(3,14,w-6,5);
+    ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.5; ctx.beginPath();
+    ctx.moveTo(8,3); ctx.quadraticCurveTo(5,-2,9,-7); ctx.moveTo(14,3); ctx.quadraticCurveTo(11,-2,15,-7); ctx.stroke();
+  } else if (type === 'medkit'){
+    ctx.fillStyle = '#f2efe8'; rr(0,0,w,h,3); ctx.fill();
+    ctx.fillStyle = '#d6332a'; ctx.fillRect(w/2-3,4,6,h-8); ctx.fillRect(w/2-9,h/2-3,18,6);
+  } else {
+    const base = type === 'heavy' ? '#8f6133' : type === 'zero' ? '#5e9446' : '#b98550';
+    ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(0,h-4,w,4); ctx.fillRect(w-3,0,3,h);
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0,0,w,3);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0,6,w,1);
+    ctx.fillStyle = type === 'heavy' ? '#b98550' : type === 'zero' ? '#86b56b' : '#d8b27a'; ctx.fillRect(w/2-4,0,8,h);
+    // "CX" print on the kraft boxes
+    const printCX = (x, size) => { ctx.fillStyle = 'rgba(35,20,8,.85)'; ctx.font = `800 ${size}px Montserrat, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.fillText('CX', x, 17); };
+    if (type === 'zero'){
+      ctx.font = `800 8.5px Montserrat, Arial, sans-serif`; ctx.textAlign = 'center';
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#2f5a22'; ctx.strokeText('ZERO-E', w/2, h/2 + 3);
+      ctx.fillStyle = '#fff'; ctx.fillText('ZERO-E', w/2, h/2 + 3);
+    } else if (type === 'fragile'){
+      printCX(w * 0.75, 9);
+      ctx.fillStyle = '#d6332a'; ctx.fillRect(4,h/2-6,13,14);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.beginPath();
+      ctx.moveTo(7,h/2-3); ctx.lineTo(14,h/2-3); ctx.lineTo(10.5,h/2+2); ctx.closePath(); ctx.moveTo(10.5,h/2+2); ctx.lineTo(10.5,h/2+6); ctx.moveTo(8,h/2+6); ctx.lineTo(13,h/2+6); ctx.stroke();
+    } else if (type === 'heavy'){
+      ctx.fillStyle = '#1c1c1c'; ctx.fillRect(8,0,4,h); ctx.fillRect(w-12,0,4,h);
+      ctx.fillStyle = '#1c1c1c'; ctx.font = `700 11px ${HUD_FONT}`; ctx.textAlign = 'left'; ctx.fillText('30kg', 14, h - 8);
+      printCX(w - 17, 9);
+    } else {
+      printCX(w * 0.25, 10);
+      ctx.strokeStyle = 'rgba(40,25,10,.55)'; ctx.lineWidth = 1.5; ctx.beginPath();
+      ctx.moveTo(w-10,h-9); ctx.lineTo(w-10,h-18); ctx.moveTo(w-13,h-15); ctx.lineTo(w-10,h-18); ctx.lineTo(w-7,h-15); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawGuestWoman(Gw){
+  // pani z BHP: biały kask, żółta kamizelka odblaskowa, spodnie robocze, buty ochronne, ciemny blond, podkładka z listą kontrolną
+  const x = Gw.x, f = FLOOR, talking = Gw.state === 'talk' && Gw.t < 3;
+  const la = talking ? 0 : Math.sin(Gw.walk) * 0.4;
+  const face = Gw.state === 'leave' ? 1 : -1;
+  const skin = '#e6ae86', HAIR = '#9c7a45', HAIR_D = '#7f6136';
+  const VEST = '#d8f02a', VEST_D = '#b9d01c', REFL = '#e9eef2', PANTS = '#2e3a4a';
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f + 2, 18, 4, 0, 0, Math.PI*2); ctx.fill();
+  // nogi: spodnie robocze z paskiem odblaskowym + buty ochronne z noskiem
+  for (const s of [-1, 1]){
+    ctx.save(); ctx.translate(x + s*5, f - 32); ctx.rotate(la * s * 0.45);
+    ctx.fillStyle = PANTS; ctx.fillRect(-4.5, 0, 9, 24);
+    ctx.fillStyle = REFL; ctx.fillRect(-4.5, 15, 9, 2.5);
+    ctx.fillStyle = '#141416'; rr(-6 + face * 2, 20, 13, 10, 2); ctx.fill();            // cholewka za kostkę
+    ctx.fillStyle = '#c9a23a'; ctx.fillRect(-6 + face * 2, 20, 13, 1.6);                 // żółte obszycie
+    ctx.fillStyle = '#8a9098'; ctx.fillRect(face > 0 ? 3.5 : -6.5, 24, 3.5, 5);           // metalowy nosek
+    ctx.fillStyle = '#6b7078'; ctx.fillRect(-6.5 + face * 2, 29, 14, 3);                 // gruba podeszwa
+    ctx.restore();
+  }
+  // tułów: ciemna koszulka polo pod kamizelką
+  ctx.fillStyle = '#34465c'; rr(x - 11, f - 66, 22, 34, 4); ctx.fill();
+  // kamizelka odblaskowa
+  ctx.fillStyle = VEST; ctx.beginPath();
+  ctx.moveTo(x - 12, f - 64); ctx.lineTo(x - 4, f - 66); ctx.lineTo(x - 2, f - 52); ctx.lineTo(x + 2, f - 52); ctx.lineTo(x + 4, f - 66);
+  ctx.lineTo(x + 12, f - 64); ctx.lineTo(x + 12, f - 33); ctx.lineTo(x - 12, f - 33); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = VEST_D; ctx.fillRect(x - 0.6, f - 52, 1.2, 19);
+  ctx.fillStyle = REFL; ctx.fillRect(x - 12, f - 46, 24, 3); ctx.fillRect(x - 12, f - 39, 24, 3);
+  ctx.fillRect(x - 9, f - 64, 2.5, 12); ctx.fillRect(x + 6.5, f - 64, 2.5, 12);
+  // identyfikator
+  ctx.fillStyle = '#fff'; ctx.fillRect(x + 4, f - 58, 6, 4); ctx.fillStyle = '#2f6fb3'; ctx.fillRect(x + 4, f - 58, 6, 1.3);
+  // ręce: jedna trzyma podkładkę z listą kontrolną, druga gestykuluje przy rozmowie
+  ctx.strokeStyle = '#34465c'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
+  const cx = x + face * 13, cy = f - 50;
+  if (talking){
+    const g = Math.sin(Gw.t * 8) * 4;
+    ctx.moveTo(x + face * 10, f - 62); ctx.lineTo(x + face * 15, f - 55); ctx.lineTo(cx, cy);
+    ctx.moveTo(x - face * 10, f - 62); ctx.lineTo(x - face * 17, f - 58 + g * .3); ctx.lineTo(x - face * 20, f - 70 + g);
+  } else {
+    const a = Math.sin(Gw.walk) * 6;
+    ctx.moveTo(x + face * 10, f - 62); ctx.lineTo(x + face * 15, f - 55); ctx.lineTo(cx, cy);
+    ctx.moveTo(x - face * 10, f - 62); ctx.lineTo(x - face * 13 - a * .3, f - 50); ctx.lineTo(x - face * 11 + a, f - 40);
+  }
+  ctx.stroke();
+  // dłonie
+  ctx.fillStyle = skin; ctx.beginPath();
+  if (talking){ const g = Math.sin(Gw.t * 8) * 4; ctx.arc(x - face * 20, f - 71 + g, 3, 0, 7); }
+  else { const a = Math.sin(Gw.walk) * 6; ctx.arc(x - face * 11 + a, f - 39, 3, 0, 7); }
+  ctx.fill();
+  // podkładka z kartką
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(face * -0.25);
+  ctx.fillStyle = '#7a5230'; ctx.fillRect(-6, -9, 12, 16);
+  ctx.fillStyle = '#f4f1ea'; ctx.fillRect(-4.5, -6.5, 9, 12.5);
+  ctx.fillStyle = '#9aa1a9'; for (let i = 0; i < 4; i++) ctx.fillRect(-3, -4.5 + i * 3, 6, 0.9);
+  ctx.fillStyle = '#b8bec6'; ctx.fillRect(-2.5, -10, 5, 2.5);
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, 4, 2.8, 0, 7); ctx.fill();
+  ctx.restore();
+  // głowa
+  const hx = x, hy = f - 76;
+  // włosy ciemny blond: spod kasku wychodzi niski kucyk za plecami
+  ctx.fillStyle = HAIR_D; ctx.beginPath(); ctx.ellipse(hx - face * 8, hy + 5, 3.8, 8, face * 0.35, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(hx, hy + 1, 8, 9, 0, 0, Math.PI*2); ctx.fill();
+  // grzywka i boki spod kasku
+  ctx.fillStyle = HAIR;
+  ctx.beginPath(); ctx.ellipse(hx, hy - 3, 8.4, 5, 0, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.fillRect(hx - 8.4, hy - 3, 2.2, 7); ctx.fillRect(hx + 6.2, hy - 3, 2.2, 7);
+  ctx.beginPath(); ctx.moveTo(hx - 7, hy - 3); ctx.quadraticCurveTo(hx - face * 3, hy - 0.5, hx + 7, hy - 3); ctx.fill();
+  // biały kask (typowy dla BHP / nadzoru) z daszkiem i paskiem
+  ctx.fillStyle = '#f4f5f2'; ctx.beginPath(); ctx.arc(hx, hy - 5, 10, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = '#dcdfdb'; ctx.fillRect(hx - 1.2, hy - 15, 2.4, 10);
+  ctx.fillStyle = '#f4f5f2'; ctx.fillRect(hx - 12 + face * 2, hy - 6, 24, 3);
+  ctx.fillStyle = '#2f6fb3'; ctx.fillRect(hx - 5, hy - 10, 3, 3);                         // naklejka
+  ctx.strokeStyle = '#3a3a3e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx - 7.5, hy - 3); ctx.lineTo(hx - 5, hy + 8); ctx.stroke();
+  // twarz
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(hx - 4 + face, hy + 1, 1.6, 2.3); ctx.fillRect(hx + 2 + face, hy + 1, 1.6, 2.3);
+  ctx.strokeStyle = '#a8506a'; ctx.lineWidth = 1.3; ctx.beginPath();
+  if (talking){ const o = Math.abs(Math.sin(Gw.t * 10)) * 1.6; ctx.ellipse(hx + face, hy + 6, 2, 0.6 + o, 0, 0, Math.PI*2); }
+  else { ctx.moveTo(hx - 2 + face, hy + 6); ctx.lineTo(hx + 2 + face, hy + 6); }
+  ctx.stroke();
+  ctx.restore();
+}
+function drawWorker(p){
+  const x = p.x, f = FLOOR, carrying = p.stack.length > 0;
+  const moving = Math.abs(p.vx) > 20, ph = p.walk;
+  const legA = moving ? Math.sin(ph) * 0.5 : 0;
+  ctx.save();
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, f+2, 24, 5, 0, 0, Math.PI*2); ctx.fill();
+  // legs
+  for (const s of [-1, 1]){
+    ctx.save(); ctx.translate(x + s*6, f-32); ctx.rotate(legA * s);
+    ctx.fillStyle = '#2b3a55'; ctx.fillRect(-5, 0, 10, 28);
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(-6 + (p.face > 0 ? 1 : -3), 26, 13, 6);
+    ctx.restore();
+  }
+  // torso + vest
+  ctx.fillStyle = '#2b3a55'; ctx.fillRect(x-13, f-62, 26, 32);
+  ctx.fillStyle = '#ff7a1a'; rr(x-14, f-62, 28, 30, 4); ctx.fill();
+  ctx.fillStyle = '#dfe4ea'; ctx.fillRect(x-14, f-48, 28, 3); ctx.fillRect(x-14, f-40, 28, 3);
+  ctx.fillStyle = '#2b3a55'; ctx.fillRect(x-2, f-62, 4, 12);
+  // arms
+  ctx.strokeStyle = '#ff7a1a'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath();
+  if (carrying){
+    const tx = swayOff(1);
+    ctx.moveTo(x-12, f-58); ctx.lineTo(x-16+tx*.5, f-72); ctx.lineTo(x-14+tx, f-84);
+    ctx.moveTo(x+12, f-58); ctx.lineTo(x+16+tx*.5, f-72); ctx.lineTo(x+14+tx, f-84);
+  } else {
+    const a = moving ? Math.sin(ph) * 8 : 0;
+    ctx.moveTo(x-13, f-58); ctx.lineTo(x-17-a*.3, f-44); ctx.lineTo(x-15+a, f-34);
+    ctx.moveTo(x+13, f-58); ctx.lineTo(x+17+a*.3, f-44); ctx.lineTo(x+15-a, f-34);
+  }
+  ctx.stroke();
+  // gloves
+  ctx.fillStyle = '#e8d14a';
+  if (carrying){ const tx = swayOff(1); ctx.beginPath(); ctx.arc(x-14+tx, f-85, 4, 0, 7); ctx.arc(x+14+tx, f-85, 4, 0, 7); ctx.fill(); }
+  // head
+  ctx.fillStyle = '#e0a47a'; ctx.beginPath(); ctx.arc(x + p.face*1, f-70, 9, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x + p.face*5 - 1, f-72, 2, 3);
+  // hard hat
+  ctx.fillStyle = '#ffcc1a'; ctx.beginPath(); ctx.arc(x + p.face, f-74, 10, Math.PI, 0); ctx.fill();
+  ctx.fillRect(x + p.face - 12 + p.face*2, f-75, 24, 3);
+  // krople potu — tylko w scenie końcowej (euforia albo stres)
+  if (G.mood){
+    const sweat = (ox, oy, ph, s) => {
+      const bob = Math.sin(G.moodT * 5 + ph) * 1.5;
+      ctx.fillStyle = 'rgba(140,205,255,.9)';
+      ctx.beginPath();
+      ctx.moveTo(x + ox, f + oy - 6 * s + bob);
+      ctx.quadraticCurveTo(x + ox + 3 * s, f + oy + bob, x + ox, f + oy + 5 * s + bob);
+      ctx.quadraticCurveTo(x + ox - 3 * s, f + oy + bob, x + ox, f + oy - 6 * s + bob);
+      ctx.fill();
+    };
+    sweat(12, -76, 0, 1);
+    sweat(-11, -66, 1.8, 0.8);
+  }
+  // stun stars
+  if (p.stun > 0){
+    ctx.fillStyle = '#ffcc1a'; ctx.font = `700 14px ${HUD_FONT}`; ctx.textAlign = 'center';
+    for (let i = 0; i < 3; i++){ const a = G.t*6 + i*2.1; ctx.fillText('✦', x + Math.cos(a)*16, f-90 + Math.sin(a)*4 - (carrying ? stackTop()-(FLOOR-84) : 0)*0); }
+  }
+  // boost streaks
+  if (p.boost > 0 && moving){
+    ctx.strokeStyle = 'rgba(255,226,168,.5)'; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i < 3; i++){ const yy = f-56 + i*12; ctx.moveTo(x - p.face*20, yy); ctx.lineTo(x - p.face*(36+i*6), yy); }
+    ctx.stroke();
+  }
+  ctx.restore();
+  // carried stack
+  let y = FLOOR - 84;
+  p.stack.forEach((t, i) => { const d = TYPES[t]; y -= d.h; drawBox(t, x + swayOff(i+1), y, swayOff(i+1) * 0.012); });
+}
+
+function cellPos(T, i){ const col = 4 - (i % 5), row = Math.floor(i / 5); return { x: T.x + 11 + col*42, y: FLOOR - 32 - (row+1)*44 }; }
+
+function drawTruck(T){
+  const x = T.x, top = FLOOR - 178;
+  ctx.save();
+  // chassis
+  ctx.fillStyle = '#15181c'; ctx.fillRect(x, FLOOR-30, 300, 12);
+  // cargo body (JBB white trailer, red band)
+  ctx.fillStyle = '#f4f1ec'; rr(x-2, top-24, 234, 176, 4); ctx.fill();
+  ctx.fillStyle = JBB_RED; ctx.fillRect(x-2, top-24, 234, 28);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `800 17px Montserrat, Arial, sans-serif`; ctx.fillText('JBB', x+8, top-3);
+  ctx.fillStyle = JBB_CREAM; ctx.font = `700 15px "Dancing Script", cursive`; ctx.fillText('Bałdyga', x+50, top-3);
+  ctx.fillStyle = '#fff'; ctx.font = `700 13px ${HUD_FONT}`; ctx.textAlign = 'right'; ctx.fillText('Z ŁYSYCH', x+224, top-4);
+  ctx.fillStyle = JBB_RED; ctx.fillRect(x-2, top+146, 234, 4);
+  ctx.fillStyle = '#20252d'; ctx.fillRect(x+8, top+10, 214, 136);
+  ctx.fillStyle = 'rgba(255,255,255,.04)'; for (let i = 0; i < 5; i++) ctx.fillRect(x+10+i*42+40, top+10, 2, 136);
+  // cells
+  for (let i = 0; i < T.cap; i++){
+    const c = cellPos(T, i);
+    if (T.cells[i]){
+      const t = T.cells[i];
+      const d = TYPES[t];
+      ctx.save(); ctx.translate(c.x + 20, c.y + 44 - d.h * (40/ d.w)); ctx.scale(40/d.w, 40/d.w); drawBox(t, 0, 0); ctx.restore();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.setLineDash([4,4]); ctx.strokeRect(c.x+2, c.y+6, 36, 36); ctx.setLineDash([]);
+    }
+  }
+  // body frame lip
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x-2, top+146, 234, 6);
+  // cab
+  const cx = x + 234;
+  ctx.fillStyle = '#f4f1ec';
+  ctx.beginPath(); ctx.moveTo(cx, FLOOR-24); ctx.lineTo(cx, FLOOR-120); ctx.lineTo(cx+44, FLOOR-120);
+  ctx.quadraticCurveTo(cx+68, FLOOR-116, cx+72, FLOOR-80); ctx.lineTo(cx+72, FLOOR-24); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(cx, FLOOR-124, 4, 100);
+  ctx.fillStyle = '#9fc4dc'; ctx.beginPath(); ctx.moveTo(cx+30, FLOOR-112); ctx.lineTo(cx+46, FLOOR-112);
+  ctx.quadraticCurveTo(cx+62, FLOOR-108, cx+64, FLOOR-84); ctx.lineTo(cx+30, FLOOR-84); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = JBB_RED; ctx.fillRect(cx, FLOOR-34, 72, 6);
+  drawJBB(ctx, cx+8, FLOOR-78, 38);
+  ctx.fillStyle = '#ffcc1a'; ctx.fillRect(cx+66, FLOOR-44, 6, 8);
+  ctx.fillStyle = '#15181c'; ctx.fillRect(cx+60, FLOOR-30, 14, 8);
+  // wheels
+  for (const wx of [x+44, x+190, cx+44]){
+    ctx.fillStyle = '#0d0f12'; ctx.beginPath(); ctx.arc(wx, FLOOR-12, 16, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#6b737d'; ctx.beginPath(); ctx.arc(wx, FLOOR-12, 6, 0, Math.PI*2); ctx.fill();
+  }
+  // roof panel: load + timer
+  const pct = T.units / T.cap;
+  const pt = top - 30;
+  ctx.fillStyle = '#0e1115'; rr(x, pt-30, 230, 24, 3); ctx.fill();
+  ctx.fillStyle = '#2a323c'; ctx.fillRect(x+6, pt-12, 218, 4);
+  ctx.fillStyle = '#ffcc1a'; ctx.fillRect(x+6, pt-12, 218 * pct, 4);
+  ctx.font = `700 15px ${HUD_FONT}`; ctx.textAlign = 'left'; ctx.fillStyle = '#e9e4da';
+  ctx.fillText(`JBB Z ŁYSYCH #${T.n}   ${T.units}/${T.cap}`, x+8, pt-15);
+  if (T.state === 'parked' || T.state === 'closing'){
+    const s = Math.ceil(T.time);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = s <= 10 && (T.state === 'parked') && Math.floor(G.t*4) % 2 ? '#ff5a4a' : (s <= 10 ? '#ff7a1a' : '#e9e4da');
+    ctx.fillText(`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`, x+224, pt-15);
+  }
+  ctx.restore();
+}
+
+function drawHUD(){
+  ctx.save(); ctx.translate(0, 28);
+  ctx.fillStyle = 'rgba(14,17,21,.7)'; rr(10, 42, 230, 58, 4); ctx.fill();
+  ctx.textAlign = 'left'; ctx.fillStyle = '#9aa1a9'; ctx.font = `700 12px ${HUD_FONT}`;
+  ctx.fillText('WYNIK', 20, 58); ctx.fillText('REKLAMACJE', 128, 58);
+  ctx.fillStyle = '#e9e4da'; ctx.font = `28px ${STENCIL}`;
+  ctx.fillText(String(G.score), 20, 88);
+  for (let i = 0; i < MAX_STRIKES; i++){
+    const hit = i < G.strikes;
+    ctx.fillStyle = hit ? '#ff5a4a' : '#2f3742';
+    ctx.fillRect(128 + i*21, 68, 16, 16);
+    if (hit){ ctx.strokeStyle = '#14181d'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(131+i*21,71); ctx.lineTo(141+i*21,81); ctx.moveTo(141+i*21,71); ctx.lineTo(131+i*21,81); ctx.stroke(); }
+  }
+  // hands capacity near HUD
+  const u = units();
+  ctx.fillStyle = '#9aa1a9'; ctx.font = `700 12px ${HUD_FONT}`; ctx.fillText('RĘCE', 20, 116);
+  for (let i = 0; i < MAX_UNITS; i++){ ctx.fillStyle = i < u ? '#b98550' : '#2f3742'; ctx.fillRect(52 + i*11, 107, 9, 11); }
+  const m = mult();
+  if (m > 1){ ctx.fillStyle = '#ffcc1a'; ctx.font = `700 16px ${HUD_FONT}`; ctx.fillText('×' + m.toFixed(1), 146, 118); }
+  if (G.player.boost > 0){ ctx.fillStyle = G.player.boostLabel === 'DOPALACZ' ? '#7fe08f' : '#ffe2a8'; ctx.font = `700 14px ${HUD_FONT}`; ctx.fillText(G.player.boostLabel + ' ' + Math.ceil(G.player.boost) + 's', 176, 118); }
+  ctx.restore();
+}
+
+/* ---------- nastrój na koniec zmiany: radość / złość ---------- */
+function moodDy(seed){
+  if (G.mood === 'happy') return -Math.abs(Math.sin(G.moodT * 7 + seed)) * 30;
+  if (G.mood === 'sad') return Math.sin(G.moodT * 18 + seed) * 1.1 + 1.5;
+  return 0;
+}
+function drawMoodFX(x, y){
+  if (G.mood === 'happy'){
+    ctx.fillStyle = '#ffcc1a'; ctx.font = `700 20px ${HUD_FONT}`; ctx.textAlign = 'center';
+    for (let i = 0; i < 3; i++){ const a = G.moodT * 6 + i * 2.1; ctx.fillText('✦', x + Math.cos(a) * 20, y + Math.sin(a) * 8); }
+  } else if (G.mood === 'sad'){
+    ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(x - 7, y - 6); ctx.lineTo(x + 7, y + 4); ctx.moveTo(x - 7, y + 4); ctx.lineTo(x + 7, y - 6); ctx.stroke();
+  }
+}
+function drawMoodChar(x, headY, seed, drawFn){
+  if (!G.mood){ drawFn(); return; }
+  const dy = moodDy(seed);
+  // poświata pod postacią, żeby wybijała się na przyciemnionym tle ekranu końcowego
+  ctx.save();
+  const glow = ctx.createRadialGradient(x, FLOOR - 40, 4, x, FLOOR - 40, 64);
+  const glowColor = G.mood === 'happy' ? 'rgba(255,204,26,.4)' : 'rgba(255,90,74,.32)';
+  glow.addColorStop(0, glowColor); glow.addColorStop(1, 'rgba(255,204,26,0)');
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, FLOOR - 40, 64, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  if (G.mood === 'happy'){
+    // lekki squash/stretch podczas skoku, żeby było wyraźnie widać
+    const stretch = Math.min(1, Math.abs(dy) / 30);
+    ctx.translate(x, FLOOR); ctx.scale(1 - stretch * 0.1, 1 + stretch * 0.16); ctx.translate(-x, -FLOOR);
+  }
+  ctx.translate(0, dy);
+  drawFn();
+  ctx.restore();
+  drawMoodFX(x, headY + dy);
+}
+
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if (bg) ctx.drawImage(bg, 0, 0);
+  if (!G) return;
+  const sh = G.shake;
+  ctx.setTransform(scale,0,0,scale,(Math.random()-.5)*sh*scale,(Math.random()-.5)*sh*scale);
+
+  // telegraph hatches + box riding the belt out of the Curioni
+  for (const t of G.tele){
+    const prog = 1 - t.t / (t.t0 || 1), bx = CUR_X + (t.x - CUR_X) * Math.min(1, prog * 1.15);
+    ctx.save(); ctx.translate(bx, 2); ctx.scale(0.45, 0.45); drawBox(t.type, 0, 0); ctx.restore();
+    const on = Math.floor(t.t * 12) % 2 === 0;
+    ctx.fillStyle = on ? '#ffcc1a' : '#7a6210';
+    ctx.fillRect(t.x - 16, 24, 32, 6);
+    ctx.fillStyle = on ? 'rgba(255,204,26,.18)' : 'rgba(255,204,26,.06)';
+    ctx.beginPath(); ctx.moveTo(t.x-16, 30); ctx.lineTo(t.x+16, 30); ctx.lineTo(t.x+30, 80); ctx.lineTo(t.x-30, 80); ctx.fill();
+    if (TYPES[t.type].hazard){ ctx.fillStyle = '#ff5a4a'; ctx.font = `700 14px ${HUD_FONT}`; ctx.textAlign = 'center'; ctx.fillText('!', t.x, 48); }
+  }
+
+  drawTruck(G.truck);
+  // scena końcowa: prezes + Adrian po lewej, robotnik + kierowca po prawej — wszyscy razem skaczą albo się smucą
+  const caller = G.mood ? G.finaleCaller : (G.truck.caller && G.truck.state !== 'leaving' ? G.truck.caller : null);
+  if (caller) drawMoodChar(caller.x, FLOOR - 90, 1, () => (G.mood ? drawCallerFront(caller) : drawCaller(caller)));
+  if (G.boss) drawMoodChar(G.boss.x, FLOOR - 98, 2, () => drawBoss(G.boss));
+  if (G.pizda) drawMoodChar(G.pizda.x, FLOOR - 105, 3, () => drawPizda(G.pizda));
+  if (G.guest) drawGuestWoman(G.guest);
+  if (G.paris && G.paris.state === 'tele') drawParis(G.paris);
+  drawMoodChar(G.player.x, FLOOR - 96, 0, () => drawWorker(G.player));
+  if (G.paris && G.paris.state !== 'tele') drawParis(G.paris);
+  for (const n of G.notes) drawNote(n);
+
+  // flying boxes into truck
+  for (const f of G.fly){
+    const c = cellPos(G.truck, f.idx[0] ?? 0), k = Math.min(1, f.t);
+    const x = f.sx + (c.x + 20 - f.sx) * k, y = f.sy + (c.y + 6 - f.sy) * k - Math.sin(k * Math.PI) * 50;
+    drawBox(f.type, x, y, k * 0.6);
+  }
+  // falling boxes + shadows
+  for (const b of G.boxes){
+    const dist = FLOOR - (b.y + b.h), a = Math.max(0.08, 0.4 - dist / 1200);
+    ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.beginPath(); ctx.ellipse(b.x, FLOOR+2, b.w/2 * (1 - dist/1400), 4, 0, 0, Math.PI*2); ctx.fill();
+    if (b.ground && b.life < 2 && Math.floor(b.life * 8) % 2) continue;   // blink before it vanishes
+    drawBox(b.type, b.x, b.y, b.rot);
+  }
+  for (const fw of G.fireworks){
+    ctx.strokeStyle = fw.color; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(fw.x, fw.y); ctx.lineTo(fw.x, fw.y + 16); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(fw.x, fw.y, 2.2, 0, Math.PI*2); ctx.fill();
+  }
+  for (const q of G.parts){
+    ctx.save(); ctx.globalAlpha = Math.min(1, q.life * 1.5); ctx.translate(q.x, q.y); ctx.rotate(q.r);
+    ctx.fillStyle = q.c; ctx.fillRect(-q.s/2, -q.s/3, q.s, q.s*0.66); ctx.restore();
+  }
+  for (const o of G.pops){
+    ctx.save(); ctx.globalAlpha = 1 - Math.max(0, o.t - 0.6) / 0.6;
+    ctx.font = `${o.size}px ${STENCIL}`; ctx.textAlign = 'center';
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,12,15,.8)';
+    const y = o.y - o.t * 40;
+    ctx.strokeText(o.text, o.x, y); ctx.fillStyle = o.color; ctx.fillText(o.text, o.x, y);
+    ctx.restore();
+  }
+  // w scenie końcowej nie pokazujemy zwykłych dymków — jedyny wyjątek to prezes po 3 s skakania z radości
+  if (!G.mood){
+    if (G.boss) drawBossBubble(G.boss);
+    if (G.pizda && G.pizda.state === 'talk') drawBubble('No i panowie jest pizda', G.pizda.x + 4, FLOOR - 200, '#222', 0);
+    if (caller && caller.x < W - 20) drawBubble('Radziu, transport rusza!', caller.x - 4, FLOOR - 150, '#1f3a66', 0);
+    if (G.workerSay) drawBubble(G.workerSay.text, G.player.x, Math.max(44, stackTop() - 58), '#b8520f', 0);
+    if (G.paris && G.paris.say > 0 && G.paris.state !== 'tele') drawBubble('Hau! Hau!', G.paris.x, Math.max(60, G.paris.y - 95), '#c2407a', 0);
+    if (G.guest && G.guest.state === 'talk' && G.guest.t < 3) drawBubble('Dobrze, że miałeś kask!', G.guest.x - 4, FLOOR - 170, '#a8437a', 0);
+  } else if (G.mood === 'happy' && G.boss && G.moodT > 3){
+    drawBubble('Można? MOŻNA!', G.boss.x, FLOOR - 200, '#d0262d', 2);
+  }
+  drawHUD();
+  drawGauge();
+  if (paused){
+    ctx.fillStyle = 'rgba(10,12,15,.6)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#ffcc1a'; ctx.font = `54px ${STENCIL}`; ctx.textAlign = 'center'; ctx.fillText('PRZERWA', W/2, H/2);
+    ctx.fillStyle = '#e9e4da'; ctx.font = `700 18px ${HUD_FONT}`; ctx.fillText('P — wracam do pracy', W/2, H/2 + 34);
+  }
+}
+
+/* ---------- loop & input ---------- */
+function frame(now){
+  if (!running) return;
+  const dt = Math.min(0.033, (now - lastT) / 1000 || 0);
+  lastT = now;
+  if (G.over) updateOutro(dt);
+  else if (!paused) update(dt);
+  if (running || G.over) draw();
+  if (running) requestAnimationFrame(frame);
+}
+function endFrame(now){
+  if (!endRunning) return;
+  const dt = Math.min(0.033, (now - lastEndT) / 1000 || 0);
+  lastEndT = now;
+  G.moodT += dt;
+  if (G.mood === 'happy'){
+    G.moodPop -= dt;
+    if (G.moodPop <= 0){
+      G.moodPop = 0.16 + Math.random() * 0.12;
+      burst(40 + Math.random() * (W - 80), FLOOR - 60 - Math.random() * 160, FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)], 10);
+    }
+    G.fwT -= dt;
+    if (G.fwT <= 0){ G.fwT = 0.5 + Math.random() * 0.4; spawnFirework(); }
+    for (const fw of G.fireworks){
+      fw.y += fw.vy * dt;
+      if (fw.y <= fw.apex){ burst(fw.x, fw.apex, fw.color, 30); sfx.cash(); fw.dead = true; }
+    }
+    G.fireworks = G.fireworks.filter(fw => !fw.dead);
+  }
+  for (const q of G.parts){
+    q.vy += 900 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.life -= dt;
+    if (q.y > FLOOR + 6){ q.y = FLOOR + 6; q.vy *= -0.3; q.vx *= 0.7; }
+  }
+  G.parts = G.parts.filter(q => q.life > 0);
+  draw();
+  requestAnimationFrame(endFrame);
+}
+function goFullscreen(){
+  const el = document.documentElement;
+  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+function toggleFullscreen(){
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); else goFullscreen();
+}
+function start(){
+  endRunning = false;
+  newGame(); ovl.hidden = true; ovl.classList.remove('ending'); paused = false; running = true;
+  lastT = performance.now(); requestAnimationFrame(frame);
+  cv.focus?.();
+}
+function bindStart(){ document.getElementById('startBtn').addEventListener('click', start); }
+bindStart();
+
+const setKey = (e, v) => {
+  const k = e.key;
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A'){ keys.left = v; e.preventDefault(); }
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D'){ keys.right = v; e.preventDefault(); }
+};
+addEventListener('keydown', e => {
+  setKey(e, true);
+  if (paused && (keys.left || keys.right)) paused = false;
+  if ((e.key === ' ' || e.key === 'Enter') && !running && document.activeElement?.id !== 'startBtn'){ e.preventDefault(); start(); }
+  if (e.key === ' ' && running && !paused && !G.over){ e.preventDefault(); throwBox(); }
+  if ((e.key === 'p' || e.key === 'P') && running && !G.over){ paused = !paused; draw(); }
+  if (e.key === 'm' || e.key === 'M') muted = !muted;
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+addEventListener('keyup', e => setKey(e, false));
+addEventListener('blur', () => { keys.left = keys.right = false; });
+document.addEventListener('visibilitychange', () => { if (document.hidden && running){ paused = true; draw(); } });
+
+const pointers = new Map();
+function syncTouch(){ touch.left = 0; touch.right = 0; for (const s of pointers.values()) touch[s]++; }
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  pointers.set(e.pointerId, (e.clientX - r.left) < r.width / 2 ? 'left' : 'right');
+  cv.setPointerCapture(e.pointerId); syncTouch();
+  if (paused) { paused = false; }
+});
+cv.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  const r = cv.getBoundingClientRect();
+  pointers.set(e.pointerId, (e.clientX - r.left) < r.width / 2 ? 'left' : 'right'); syncTouch();
+});
+for (const ev of ['pointerup','pointercancel']) cv.addEventListener(ev, e => { pointers.delete(e.pointerId); syncTouch(); });
+
+addEventListener('resize', resize);
+new ResizeObserver(resize).observe(cv);
+resize();
+// demo scene behind the title card
+newGame();
+G.player.stack = ['box','zero','fragile','heavy']; G.player.x = 430;
+G.truck.units = 12; G.truck.cells = ['box','zero','heavy','heavy','fragile','box','zero','fragile','box','heavy','heavy','zero'];
+G.truck.caller = { x:914, t:3 };G.boxes.push({ type:'box', x:210, y:190, w:40, h:34, vx:0, vy:0, rot:.2, vr:0 });
+G.boxes.push({ type:'heavy', x:330, y:120, w:52, h:40, vx:0, vy:0, rot:-.1, vr:0 });
+G.tele.push({ x:260, t:.5, t0:1, type:'pallet' });
+G.boss = { x:150, target:150, state:'shout', t:1, walk:0, line:0, thrown:true };
+G.notes.push({ x:300, y:360, vx:0, vy:0, r:0.4 });
+document.fonts?.ready.then(() => { bg = renderBackground(); if (!running) draw(); });
+draw();
+})();
+</script>
