@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   INTER-BOX — ekran powitalny na telewizor w wejściu (wersja 4.1 — podłączony arkusz Google)
+   INTER-BOX — ekran powitalny na telewizor w wejściu (wersja 4.2 — napisy dopasowują się do miejsca)
    Układ 1920×1080, skalowany automatycznie do rozmiaru ekranu.
    ===================================================================== */
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #06080b; cursor: none; }
@@ -42,10 +42,10 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 #date b { color: #dfe7ee; font-weight: 600; }
 
 /* ---------- lewa kolumna ---------- */
-#left { position: absolute; left: 96px; top: 262px; width: 1000px; }
-.kicker { font-size: 24px; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: #8fa1b2; }
+#left { position: absolute; left: 96px; top: 262px; width: 1040px; }
+.kicker { white-space: nowrap; overflow: hidden; font-size: 24px; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: #8fa1b2; }
 .kicker:before { content: ''; display: inline-block; width: 46px; height: 3px; background: #35d28a; vertical-align: middle; margin: -4px 20px 0 0; border-radius: 2px; }
-#greet { margin-top: 20px; font-size: 136px; font-weight: 800; line-height: 1; letter-spacing: -3px; }
+#greet { white-space: nowrap; margin-top: 20px; font-size: 136px; font-weight: 800; line-height: 1; letter-spacing: -3px; }
 #greet span { color: #35d28a; }
 #sub { margin-top: 24px; font-size: 34px; font-weight: 300; color: #b9c6d2; line-height: 1.35; max-width: 980px; }
 
@@ -56,11 +56,11 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 #ringNum { position: absolute; left: 0; top: 0; width: 360px; height: 360px; text-align: center; }
 #days { display: block; font-weight: 800; color: #ffffff; line-height: 1; letter-spacing: -4px; margin-top: 96px; }
 #daysUnit { display: block; margin-top: 8px; font-size: 30px; font-weight: 600; color: #35d28a; letter-spacing: .2em; text-transform: uppercase; }
-#safeText { position: absolute; left: 420px; top: 40px; width: 620px; }
+#safeText { position: absolute; left: 420px; top: 40px; width: 640px; }
 #safeTitle { font-size: 66px; font-weight: 800; line-height: 1.02; letter-spacing: -1px; white-space: nowrap; }
-#safeTitle small { display: block; font-size: 22px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: #8fa1b2; margin-bottom: 16px; }
+#safeTitle small { display: block; overflow: hidden; font-size: 22px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: #8fa1b2; margin-bottom: 16px; }
 .facts { margin-top: 26px; }
-.fact { font-size: 27px; color: #aebccb; margin-top: 14px; font-weight: 400; white-space: nowrap; }
+.fact { overflow: hidden; font-size: 27px; color: #aebccb; margin-top: 14px; font-weight: 400; white-space: nowrap; }
 .fact b { color: #eef3f7; font-weight: 600; }
 .fact i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #35d28a; margin-right: 18px; vertical-align: middle; margin-top: -4px; }
 .fact i.g { background: #4a5a6a; }
@@ -72,13 +72,13 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
   background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .075); border-radius: 36px;
 }
 #wHead { overflow: hidden; }
-#wHead .kicker { float: left; }
-#wPlace { float: right; font-size: 24px; color: #8fa1b2; font-weight: 500; margin-top: -1px; }
+#wHead .kicker { float: left; max-width: 240px; }
+#wPlace { float: right; max-width: 300px; white-space: nowrap; overflow: hidden; font-size: 24px; color: #8fa1b2; font-weight: 500; margin-top: -1px; }
 #wNow { position: relative; height: 196px; margin-top: 18px; }
 #wIcon { position: absolute; left: -14px; top: -4px; width: 200px; height: 200px; }
 #wTemp { position: absolute; left: 210px; top: 6px; font-size: 136px; font-weight: 300; letter-spacing: -5px; line-height: 1; }
 #wTemp sup { font-size: 70px; vertical-align: top; position: relative; top: 8px; letter-spacing: 0; color: #9aabbb; }
-#wDesc { position: absolute; left: 216px; top: 148px; font-size: 30px; font-weight: 500; color: #dfe7ee; white-space: nowrap; }
+#wDesc { position: absolute; left: 216px; top: 148px; width: 332px; overflow: hidden; font-size: 30px; font-weight: 500; color: #dfe7ee; white-space: nowrap; }
 #wDetails { margin-top: 18px; font-size: 22px; color: #8fa1b2; white-space: nowrap; }
 #wDetails b { color: #dfe7ee; font-weight: 600; }
 #wDetails .sep { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #3c4a58; margin: 0 14px; vertical-align: middle; margin-top: -3px; }
@@ -156,7 +156,7 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       <div id="ringNum"><span id="days">0</span><span id="daysUnit">dni</span></div>
     </div>
     <div id="safeText">
-      <div id="safeTitle"><small id="kSafe">&nbsp;</small><span id="tSafe">&nbsp;</span></div>
+      <div id="safeTitle"><small id="kSafe">&nbsp;</small><div id="tSafe" style="overflow:hidden">&nbsp;</div></div>
       <div class="facts">
         <div class="fact"><i></i><span id="lLast"></span> <b id="fLast">—</b></div>
         <div class="fact"><i class="g"></i><span id="lRec"></span> <b id="fRec">—</b></div>
@@ -317,6 +317,7 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
     $('greet').removeAttribute('data-g'); // powitanie odświeży się przy najbliższym tyknięciu zegara
     $('kGreet').style.visibility = T('naglowek') ? 'visible' : 'hidden';
     $('kWeather').style.visibility = T('pogNaglowek') ? 'visible' : 'hidden';
+    fitAll();
   }
 
   /* ---------- zegar i powitanie ---------- */
@@ -331,6 +332,7 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
     if (gEl.getAttribute('data-g') !== g) {
       gEl.innerHTML = /!$/.test(g) ? esc(g.slice(0, -1)) + '<span>!</span>' : esc(g) || '&nbsp;';
       gEl.setAttribute('data-g', g);
+      fitW(gEl, 136, 60);
     }
     // noc
     var night = CONFIG.nocOd > CONFIG.nocDo ? (h >= CONFIG.nocOd || h < CONFIG.nocDo) : (h >= CONFIG.nocOd && h < CONFIG.nocDo);
@@ -366,6 +368,16 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
     return kind === 'podpisy' ? CONFIG.podpisy : CONFIG.komunikatyBHP;
   }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  // zmniejsza czcionkę, aż tekst zmieści się w szerokości swojego pola (max/min w px)
+  function fitW(id, max, min) {
+    var el = typeof id === 'string' ? $(id) : id;
+    fitText(el, max, min, function () { return el.scrollWidth > el.clientWidth + 1; });
+  }
+  function fitAll() {
+    fitW('kGreet', 24, 14); fitW('greet', 136, 60); fitW('kSafe', 22, 13); fitW('tSafe', 66, 30);
+    var f = document.querySelectorAll('.fact'); for (var i = 0; i < f.length; i++) fitW(f[i], 27, 16);
+    fitW('kWeather', 24, 14); fitW('wPlace', 24, 14); fitW('wDesc', 30, 16);
+  }
   function fitText(el, max, min, tooBig) {
     var fs = max; el.style.fontSize = fs + 'px';
     while (fs > min && tooBig()) { fs--; el.style.fontSize = fs + 'px'; }
@@ -518,6 +530,7 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
     if (CONFIG.cele.indexOf(d) >= 0) bt = esc(T('gratulacje')).replace('{dni}', d + ' ' + dniWord(d));
     else if (isRec) bt = esc(T('nowyRekord'));
     badge.style.display = bt ? 'inline-block' : 'none'; badge.innerHTML = bt;
+    var ff = document.querySelectorAll('.fact'); for (var fi = 0; fi < ff.length; fi++) fitW(ff[fi], 27, 16);
 
     tgtD = d; tgtFrac = frac;
     if (animate) { // odliczanie przy starcie (cel może się zmienić, gdy arkusz dojdzie w trakcie)
@@ -607,6 +620,7 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
     $('wIcon').innerHTML = icon(wi[1], c.is_day === 1, true);
     $('wTemp').innerHTML = Math.round(c.temperature_2m) + '<sup>°C</sup>';
     $('wDesc').innerHTML = wi[0];
+    fitW('wDesc', 30, 16);
     var sr = j.daily.sunrise[0].slice(11, 16), ss = j.daily.sunset[0].slice(11, 16);
     $('wDetails').innerHTML = esc(T('odczuwalna')) + ' <b>' + Math.round(c.apparent_temperature) + '°</b><span class="sep"></span>' + esc(T('wiatr')) + ' <b>' + Math.round(c.wind_speed_10m) + ' km/h</b><span class="sep"></span>' + esc(T('wilgotnosc')) + ' <b>' + Math.round(c.relative_humidity_2m) + '%</b>';
     // godziny
@@ -671,8 +685,13 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
   setInterval(loadSheet, CONFIG.arkuszCoMinut * 60000);
   setInterval(loadWeather, CONFIG.pogodaCoMinut * 60000);
 
+  window.addEventListener('load', fitAll);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+  setTimeout(fitAll, 3000);
+  setInterval(fitAll, 60000);
+
   // do testów z konsoli
-  window.IBTV = { config: CONFIG, renderSafety: renderSafety, loadWeather: loadWeather, loadSheet: loadSheet, applySheet: applySheet, parseAnyDate: parseAnyDate, daysNow: daysNow };
+  window.IBTV = { config: CONFIG, renderWeather: renderWeather, fitAll: fitAll, tickClock: tickClock, renderSafety: renderSafety, loadWeather: loadWeather, loadSheet: loadSheet, applySheet: applySheet, parseAnyDate: parseAnyDate, daysNow: daysNow };
 })();
 </script>
 </body>
