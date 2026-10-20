@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   INTER-BOX — ekran powitalny na telewizor w wejściu (wersja 4.4 — dopasowanie do ekranu telewizora)
+   INTER-BOX — ekran powitalny na telewizor w wejściu (wersja 4.7 — skrócone nazwy dni w prognozie)
    Układ 1920×1080, skalowany automatycznie do rozmiaru ekranu.
    ===================================================================== */
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #06080b; cursor: none; }
@@ -88,12 +88,16 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 .hour .t { font-size: 21px; color: #8fa1b2; }
 .hour .ic { width: 58px; height: 58px; margin: 6px auto 2px; }
 .hour .v { font-size: 27px; font-weight: 600; }
-.day { overflow: hidden; height: 58px; line-height: 58px; }
-.day .n { float: left; width: 190px; font-size: 26px; font-weight: 600; }
-.day .ic { float: left; width: 50px; height: 50px; margin-top: 4px; }
-.day .d { float: left; margin-left: 18px; font-size: 22px; color: #8fa1b2; width: 210px; white-space: nowrap; overflow: hidden; }
-.day .mm { float: right; font-size: 26px; font-weight: 600; }
-.day .mm span { color: #6f8091; font-weight: 400; margin-left: 12px; }
+/* wiersz dnia: stałe kolumny — temperatura ma zawsze zarezerwowane miejsce po prawej */
+.day { position: relative; height: 58px; line-height: 58px; }
+.day .n { position: absolute; left: 0; width: 76px; font-size: 26px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.day .ic { position: absolute; left: 80px; top: 4px; width: 50px; height: 50px; }
+.day .d { position: absolute; left: 146px; right: 110px; font-size: 22px; color: #8fa1b2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day .mm { position: absolute; right: -18px; width: 124px; font-size: 26px; font-weight: 600; white-space: nowrap; }
+/* dwie kolumny o stałej szerokości, liczby wyrównane do prawej — max pod max, min pod min */
+.day .mm b, .day .mm span { display: inline-block; text-align: right; }
+.day .mm b { width: 62px; font-weight: 600; }
+.day .mm span { width: 62px; color: #6f8091; font-weight: 400; }
 #wErr { display: none; position: absolute; left: 48px; right: 48px; top: 300px; text-align: center; font-size: 26px; color: #8fa1b2; }
 
 /* ---------- stopka ---------- */
@@ -321,6 +325,7 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
   /* ---------- daty po polsku ---------- */
   var DNI = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
   var DNI_D = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+  var DNI_S = ['Nd.', 'Pon.', 'Wt.', 'Śr.', 'Czw.', 'Pt.', 'Sob.']; // prognoza na kolejne dni — więcej miejsca na opis
   var MIES = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
   function p2(n) { return (n < 10 ? '0' : '') + n; }
   function parseD(s) { var a = String(s).split('-'); return { y: +a[0], m: +a[1], d: +a[2] }; }
@@ -665,10 +670,15 @@ var TEKSTY = [ // [klucz, nazwa wiersza w arkuszu, tekst zapasowy]
     var d = '';
     for (var q = 1; q <= 3 && q < j.daily.time.length; q++) {
       var dw = wInfo(j.daily.weather_code[q]), dd = parseD(j.daily.time[q]);
-      var name = q === 1 ? esc(T('jutro')) : DNI_D[new Date(dd.y, dd.m - 1, dd.d).getDay()];
-      d += '<div class="day"><div class="n">' + name + '</div><div class="ic">' + icon(dw[1], true, false) + '</div><div class="d">' + dw[0] + '</div><div class="mm">' + Math.round(j.daily.temperature_2m_max[q]) + '°<span>' + Math.round(j.daily.temperature_2m_min[q]) + '°</span></div></div>';
+      var name = DNI_S[new Date(dd.y, dd.m - 1, dd.d).getDay()];
+      d += '<div class="day"><div class="n">' + name + '</div><div class="ic">' + icon(dw[1], true, false) + '</div><div class="d">' + dw[0] + '</div><div class="mm"><b>' + Math.round(j.daily.temperature_2m_max[q]) + '°</b><span>' + Math.round(j.daily.temperature_2m_min[q]) + '°</span></div></div>';
     }
     $('wDays').innerHTML = d;
+    var dr = $('wDays').children; // długi opis / nazwa dnia — mniejsza czcionka zamiast wypychania temperatury
+    for (var di = 0; di < dr.length; di++) {
+      var c = dr[di].children;
+      fitW(c[0], 26, 18); fitW(c[2], 22, 14);
+    }
     var f = new Date(fetchedAt);
     wUpd = esc(T('wschod')) + ' ' + sr + ' · ' + esc(T('zachod')) + ' ' + ss + ' · ' + esc(T('pogodaZ')) + ' ' + p2(f.getHours()) + ':' + p2(f.getMinutes()); wErrTxt = '';
     drawUpd();
